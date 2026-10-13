@@ -147,7 +147,7 @@ checks() {
         command -v unzip >/dev/null || die "$(t "unzip introuvable (apt install unzip)." "unzip not found (apt install unzip).")"
         [ -n "$SOURCE" ] || command -v curl >/dev/null || die "$(t "curl introuvable (apt install curl)." "curl not found (apt install curl).")"
     fi
-    php -m | grep -qi '^zip$' || die "$(t "Extension PHP zip absente : UpdateGuard en a besoin pour vérifier les archives." "PHP extension zip missing: UpdateGuard needs it to check archives.")"
+    php -r 'exit(extension_loaded("zip") ? 0 : 1);' || die "$(t "Extension PHP zip absente : UpdateGuard en a besoin pour vérifier les archives." "PHP extension zip missing: UpdateGuard needs it to check archives.")"
     if [ -d "$FS_PATH/Modules/Refresh" ]; then ok "$(t "Module Refresh présent : les pages utiliseront son style." "Refresh module found: the pages will use its look.")"; else info "$(t "Module Refresh absent : style FreeScout standard." "Refresh module missing: standard FreeScout look.")"; fi
 }
 
