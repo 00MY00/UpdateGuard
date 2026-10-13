@@ -42,6 +42,8 @@ jobs:
       - name: Blade templates compile (illuminate/view 5.5, as in FreeScout)
         run: |
           mkdir -p /tmp/blade
+          # throw-away install used only to compile the templates: old Laravel 5.5 has advisories, not loaded by the module
+          echo '{"config": {"policy": {"advisories": {"block": false}}, "audit": {"block-insecure": false}}}' > /tmp/blade/composer.json
           composer require --no-interaction --working-dir=/tmp/blade illuminate/view:5.5.*
           php tests/blade/compile.php /tmp/blade/vendor/autoload.php
       - name: JavaScript syntax
