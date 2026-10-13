@@ -1,0 +1,22 @@
+{
+    "name": "UpdateGuard",
+    "alias": "updateguard",
+    "description": "Safe updates for FreeScout community modules: SHA-256, staging, backup, health checks, crash detection, automatic rollback and restorations.",
+    "version": "1.0.0",
+    "detailsUrl": "https://github.com/00MY00/UpdateGuard",
+    "author": "00MY00 and UpdateGuard contributors",
+    "img": "../modules/updateguard/img/module.svg",
+    "requiredAppVersion": "1.8.0",
+    "latestVersionUrl": "https://github.com/00MY00/UpdateGuard/releases/latest/download/version.txt",
+    "latestVersionZipUrl": "https://github.com/00MY00/UpdateGuard/releases/latest/download/UpdateGuard.zip",
+    "license": "AGPL-3.0",
+    "keywords": ["update", "backup", "rollback", "health", "sha256"],
+    "active": 0,
+    "order": 120,
+    "providers": [
+        "Modules\\UpdateGuard\\Providers\\UpdateGuardServiceProvider"
+    ],
+    "aliases": {},
+    "files": [],
+    "requires": []
+}

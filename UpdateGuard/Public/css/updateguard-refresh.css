@@ -1,0 +1,24 @@
+/*
+ * UpdateGuard — aesthetic adaptation only, loaded when the Refresh module is installed and active.
+ * Uses Refresh's public CSS custom properties when they exist, with FreeScout values as fallbacks: if Refresh
+ * disappears or changes, every rule falls back and UpdateGuard stays fully usable. No Refresh class is required.
+ */
+.ug-refresh {
+    --ug-surface: var(--rf-surface, var(--surface, #fff));
+    --ug-border: var(--rf-border, var(--border-color, #e3e6ea));
+    --ug-text-muted: var(--rf-text-muted, var(--text-muted, #6b7280));
+    --ug-radius: var(--rf-radius, var(--radius, 8px));
+}
+.ug-refresh .ug-header h1 { font-weight: 600; letter-spacing: -0.01em; }
+.ug-refresh .ug-stats,
+.ug-refresh .ug-log,
+.ug-refresh .panel { border-color: var(--ug-border); border-radius: var(--ug-radius); background: var(--ug-surface); }
+.ug-refresh .ug-stat { border-color: var(--ug-border); }
+.ug-refresh .ug-stat-label,
+.ug-refresh .text-help { color: var(--ug-text-muted); }
+.ug-refresh .ug-badge { border-radius: 999px; }
+.ug-refresh .table { background: transparent; }
+@media (max-width: 767px) {
+    .ug-refresh .ug-cards tr { border-color: var(--ug-border); border-radius: var(--ug-radius); background: var(--ug-surface) !important; }
+    .ug-refresh .ug-save { background: var(--ug-surface); }
+}

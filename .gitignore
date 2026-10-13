@@ -1,0 +1,16 @@
+dist/
+vendor/
+storage/
+*.log
+.env
+.env.*
+*.pem
+*.key
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+
+# Notes locales (spécification, passation de session)
+Info.md
+HISTORIQUE.md

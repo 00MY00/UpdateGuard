@@ -1,0 +1,83 @@
+/* UpdateGuard — functional base on FreeScout's Bootstrap 3. Compact, no decoration; states always carry a symbol + text. */
+
+.ug-page { padding-bottom: 30px; }
+.ug-header h1 { font-size: 22px; margin: 15px 0 10px; }
+.ug-tabs { margin-bottom: 15px; }
+.ug-title { font-size: 20px; margin: 5px 0 15px; }
+.ug-title small { font-size: 14px; }
+.ug-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 15px; }
+.ug-inline { display: inline-block; margin: 0; }
+.ug-force { font-weight: normal; margin-left: 6px; }
+.ug-indent { padding-left: 20px; }
+.ug-meta { margin: 0 0 15px; font-size: 13px; }
+
+/* states: symbol + text; colour is only a complement */
+.ug-badge { display: inline-block; padding: 1px 7px; border-radius: 3px; font-size: 12px; font-weight: 600; white-space: nowrap; border: 1px solid transparent; }
+.ug-ok { color: #2b6b2b; background: #e8f5e8; border-color: #c6e3c6; }
+.ug-warn { color: #7a5200; background: #fff5dc; border-color: #f0dca8; }
+.ug-fail { color: #9b1c1c; background: #fdeaea; border-color: #f2c4c4; }
+.ug-info { color: #1f4f82; background: #e9f2fb; border-color: #c4dbf2; }
+.ug-muted { color: #555; background: #f1f1f1; border-color: #ddd; }
+
+/* dashboard counters */
+.ug-stats { display: flex; flex-wrap: wrap; border: 1px solid #ddd; border-radius: 3px; margin-bottom: 12px; }
+.ug-stat { flex: 1 1 110px; padding: 8px 12px; border-right: 1px solid #eee; }
+.ug-stat:last-child { border-right: 0; }
+.ug-stat-value { display: block; font-size: 18px; font-weight: 600; }
+.ug-stat-label { display: block; font-size: 12px; color: #777; }
+
+.ug-table td, .ug-table th { vertical-align: middle !important; }
+.ug-actions { white-space: nowrap; text-align: right; }
+.ug-actions-col { text-align: right; }
+.ug-kv th { width: 45%; font-weight: 600; }
+
+.ug-progress .panel-body { padding: 10px 15px; }
+.ug-progress .progress { margin: 8px 0 4px; height: 10px; }
+.ug-progress-line { display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline; }
+
+.ug-filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.ug-filters .form-control { width: auto; max-width: 100%; }
+
+.ug-log { border: 1px solid #ddd; border-radius: 3px; font-family: Menlo, Consolas, monospace; font-size: 12px; margin-bottom: 10px; }
+.ug-log-line { padding: 4px 8px; border-bottom: 1px solid #f0f0f0; display: flex; flex-wrap: wrap; gap: 0 10px; }
+.ug-log-time { color: #777; }
+.ug-log-level { font-weight: 700; min-width: 70px; }
+.ug-log-module { min-width: 110px; }
+.ug-log-message { flex: 1 1 300px; word-break: break-word; }
+.ug-log-details { flex-basis: 100%; }
+.ug-log-details pre { max-height: 300px; overflow: auto; font-size: 11px; }
+.ug-level-error .ug-log-level, .ug-level-critical .ug-log-level { color: #9b1c1c; }
+.ug-level-warning .ug-log-level { color: #7a5200; }
+.ug-level-debug { color: #888; }
+
+.ug-report { white-space: pre-wrap; word-break: break-word; font-size: 12px; max-height: 70vh; overflow: auto; }
+.ug-compare { display: grid; grid-template-columns: max-content 1fr; gap: 4px 15px; margin-bottom: 12px; }
+.ug-compare dt { font-weight: 600; }
+.ug-compare dd { margin: 0; }
+.ug-confirm-buttons { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.ug-subnav { margin-bottom: 10px; }
+.ug-settings fieldset { margin-bottom: 20px; }
+.ug-settings .form-control { max-width: 320px; }
+.ug-settings .input-group { max-width: 320px; }
+.ug-save { position: sticky; bottom: 0; background: #fff; padding: 10px 0; border-top: 1px solid #eee; }
+
+/* phones: tables become cards, no horizontal scroll */
+@media (max-width: 767px) {
+    .ug-header h1 { font-size: 18px; }
+    .ug-tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; border-bottom: 1px solid #ddd; }
+    .ug-tabs > li { float: none; flex: 0 0 auto; }
+    .ug-cards thead { display: none; }
+    .ug-cards, .ug-cards tbody, .ug-cards tr, .ug-cards td { display: block; width: 100%; }
+    .ug-cards tr { border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px; padding: 8px 10px; background: #fff !important; }
+    .ug-cards td { border: 0 !important; padding: 3px 0 !important; display: flex; justify-content: space-between; gap: 10px; text-align: right; }
+    .ug-cards td[data-label]::before { content: attr(data-label); font-weight: 600; text-align: left; color: #555; }
+    .ug-cards td.ug-card-title { font-size: 15px; font-weight: 600; text-align: left; display: block; padding-bottom: 6px !important; }
+    .ug-cards td.ug-actions { justify-content: space-between; padding-top: 8px !important; }
+    .ug-cards td.ug-actions .btn-primary { flex: 1 1 auto; }
+    .ug-stat { flex-basis: 33%; border-bottom: 1px solid #eee; }
+    .ug-log-line { flex-direction: column; }
+    .ug-log-time, .ug-log-level, .ug-log-module { min-width: 0; }
+    .ug-filters .form-control, .ug-filters .btn { flex: 1 1 45%; }
+    .ug-confirm-buttons .btn, .ug-confirm-buttons form { flex: 1 1 auto; }
+    .ug-confirm-buttons form .btn { width: 100%; }
+}
