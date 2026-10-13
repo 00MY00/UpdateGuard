@@ -3,6 +3,12 @@
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions [SemVer](https://semver.org/lang/fr/).
 La version du module est celle de `UpdateGuard/module.json`.
 
+## [1.1.1] - 2026-10-13
+
+### Corrigé
+- Détection de l'extension PHP `zip` dans l'installeur via `extension_loaded('zip')`, pour éviter les faux échecs
+  du pipeline `php -m | grep` avec `pipefail`.
+
 ## [1.1.0] - 2026-10-13
 
 ### Ajouté
