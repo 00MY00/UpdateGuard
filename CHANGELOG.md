@@ -3,6 +3,13 @@
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions [SemVer](https://semver.org/lang/fr/).
 La version du module est celle de `UpdateGuard/module.json`.
 
+## [1.1.0] - 2026-10-13
+
+### Ajouté
+- **7 langues**, comme Workflow Packs et RefreshGlobal : français, anglais, allemand, espagnol, italien, néerlandais,
+  portugais (Brésil). La langue suit le profil FreeScout de l'utilisateur ; une langue absente utilise l'anglais.
+- Test unitaire : les 7 fichiers ont les mêmes clés et les mêmes paramètres (`:module`, `:version`…), aucun texte vide.
+
 ## [1.0.0] - 2026-10-13
 
 ### Ajouté

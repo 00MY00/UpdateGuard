@@ -15,6 +15,8 @@ l'administrateur comprenne et restaure rapidement la situation.
   feuille de style d'adaptation (`updateguard-refresh.css`) qui retombe sur le style standard s'il disparaît.
 - Interface **responsive** (ordinateur, tablette, téléphone) : sur téléphone, les tableaux deviennent des cartes et les
   actions secondaires passent dans le menu `⋮`.
+- **7 langues** : français, anglais, allemand, espagnol, italien, néerlandais, portugais (Brésil). La langue suit le
+  profil FreeScout de l'utilisateur ; une langue absente utilise l'anglais. `install.sh` parle français ou anglais.
 - Réservé aux **administrateurs** (routes `auth` + `roles:admin`, vérification répétée dans chaque contrôleur, CSRF).
 - Les mises à jour ne s'exécutent **jamais dans une requête web** : l'interface crée une tâche, le planificateur de
   FreeScout l'exécute dans la minute (`updateguard:run`), la page affiche la progression.
@@ -210,7 +212,7 @@ Actions: `updateguard.before_update`, `updateguard.after_update`, `updateguard.u
 ## Développement
 
 ```bash
-php tests/unit/run.php                       # tests unitaires purs PHP (archives malveillantes, SHA-256, verrou…)
+php tests/unit/run.php                       # tests unitaires purs PHP (archives malveillantes, SHA-256, verrou, 7 langues…)
 php tests/blade/compile.php <autoload.php>   # compilation des vues Blade (illuminate/view)
 bash tools/build-release.sh                  # dist/UpdateGuard.zip, version.txt, module.json, install.sh, SHA256SUMS
 ```

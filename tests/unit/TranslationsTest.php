@@ -1,11 +1,35 @@
 <?php
 
-test('translations: en and fr have the same keys, every key used exists', function () {
+const UG_LANGUAGES = ['en', 'fr', 'de', 'es', 'it', 'nl', 'pt-BR'];
+
+/** ":module", ":version"... of a text, sorted */
+function ug_params($text)
+{
+    preg_match_all('/:([a-z_]+)/', $text, $m);
+    $p = array_unique($m[1]);
+    sort($p);
+
+    return $p;
+}
+
+foreach (UG_LANGUAGES as $lang) {
+    test('translations: '.$lang.' complete (same keys and parameters as en, no empty text)', function () use ($lang) {
+        $base = __DIR__.'/../../UpdateGuard/Resources/lang/';
+        check(is_file($base.$lang.'/ug.php'), 'missing file '.$lang.'/ug.php');
+        $en = require $base.'en/ug.php';
+        $t = require $base.$lang.'/ug.php';
+        same([], array_values(array_diff(array_keys($en), array_keys($t))), 'missing in '.$lang);
+        same([], array_values(array_diff(array_keys($t), array_keys($en))), 'unknown in '.$lang);
+        foreach ($en as $key => $text) {
+            check(is_string($t[$key]) && trim($t[$key]) !== '', $lang.'.'.$key.' empty');
+            same(ug_params($text), ug_params($t[$key]), $lang.'.'.$key.' parameters');
+        }
+    });
+}
+
+test('translations: every key used in the code exists', function () {
     $base = __DIR__.'/../../UpdateGuard';
     $en = require $base.'/Resources/lang/en/ug.php';
-    $fr = require $base.'/Resources/lang/fr/ug.php';
-    same([], array_values(array_diff(array_keys($en), array_keys($fr))), 'missing in fr');
-    same([], array_values(array_diff(array_keys($fr), array_keys($en))), 'missing in en');
 
     $used = [];
     $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($base, FilesystemIterator::SKIP_DOTS));
