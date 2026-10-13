@@ -41,7 +41,8 @@ jobs:
           tools: composer
       - name: Blade templates compile (illuminate/view 5.5, as in FreeScout)
         run: |
-          composer require --quiet --no-interaction --working-dir=/tmp/blade illuminate/view:5.5.*
+          mkdir -p /tmp/blade
+          composer require --no-interaction --working-dir=/tmp/blade illuminate/view:5.5.*
           php tests/blade/compile.php /tmp/blade/vendor/autoload.php
       - name: JavaScript syntax
         run: node --check UpdateGuard/Public/js/updateguard.js
