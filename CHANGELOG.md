@@ -9,6 +9,14 @@ La version du module est celle de `UpdateGuard/module.json`.
 - Détection de l'extension PHP `zip` dans l'installeur via `extension_loaded('zip')`, pour éviter les faux échecs
   du pipeline `php -m | grep` avec `pipefail`.
 
+## [1.2.0] - 2026-10-14
+
+### Corrigé
+- **Accès depuis un téléphone avec Refresh** : Refresh remplace la barre de gauche par une barre d'onglets fixe, sans
+  place pour un module, donc UpdateGuard n'était pas accessible. L'entrée « UpdateGuard » est maintenant ajoutée dans
+  le panneau « Profil » de Refresh (son menu ☰), comme pour Workflow Packs. Réservée aux administrateurs. Sans
+  Refresh, l'entrée reste dans le menu « Gérer » de FreeScout.
+
 ## [1.1.0] - 2026-10-13
 
 ### Ajouté

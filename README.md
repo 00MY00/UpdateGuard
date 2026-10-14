@@ -43,7 +43,8 @@ jour.
 
 ## Utilisation (administrateurs)
 
-Menu **Gérer › UpdateGuard** :
+Menu **Gérer › UpdateGuard**. Sur téléphone avec Refresh : panneau **Profil** (menu ☰) › UpdateGuard ; sans
+Refresh : menu ☰ de FreeScout › Gérer › UpdateGuard.
 
 | Page | Contenu |
 |---|---|

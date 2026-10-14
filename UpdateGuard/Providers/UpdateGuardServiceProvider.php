@@ -48,7 +48,39 @@ class UpdateGuardServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
         $this->loadRoutesFrom(__DIR__.'/../Http/routes.php');
         $this->registerMenus();
+        $this->registerPhoneMenu();
         $this->registerSchedule();
+    }
+
+    /**
+     * Phones with the Refresh module: Refresh replaces the left bar by a fixed tab bar (Tickets, Contacts, Dashboard,
+     * Notifications, Profile), with no room for a module. The entry is added to the "Profile" panel instead
+     * (Refresh's burger menu) by Public/js/updateguard-phone.js, from the settings written here in <head> — same
+     * mechanism as Workflow Packs. Without Refresh, the entry is in FreeScout's own burger menu (Manage).
+     */
+    protected function registerPhoneMenu()
+    {
+        \Eventy::addFilter('javascripts', function ($scripts) {
+            $scripts[] = \Module::getPublicPath(self::ALIAS).'/js/updateguard-phone.js';
+
+            return $scripts;
+        });
+        \Eventy::addAction('layout.head', function () {
+            try {
+                if (!self::isAdmin() || !Ui::refreshActive()) {
+                    return;
+                }
+                $config = [
+                    'url'    => route('updateguard.dashboard'),
+                    'label'  => __('updateguard::ug.title'),
+                    'icon'   => asset(\Module::getPublicPath(self::ALIAS).'/img/module.svg'),
+                    'active' => self::isModulePage(),
+                ];
+                echo '<meta name="updateguard" content="'.e(json_encode($config, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)).'">'."\n";
+            } catch (\Throwable $e) {
+                // optional entry
+            }
+        });
     }
 
     public static function isAdmin()
