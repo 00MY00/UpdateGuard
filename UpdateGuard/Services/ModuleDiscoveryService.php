@@ -147,6 +147,7 @@ class ModuleDiscoveryService
             'error'            => '',
         ];
         $latest = '';
+        $zipHash = '';
         if (!$self && !$official && $versionUrl !== '') {
             try {
                 $latest = VersionService::normalize($download->text($versionUrl));
@@ -160,7 +161,8 @@ class ModuleDiscoveryService
             if ($sumsUrl !== '' && $zipUrl !== '') {
                 $caps['sums_url'] = $sumsUrl;
                 try {
-                    $caps['sha256'] = ChecksumService::expectedFor($download->text($sumsUrl), DownloadService::zipName($m)) !== '';
+                    $zipHash = ChecksumService::expectedFor($download->text($sumsUrl), DownloadService::zipName($m));
+                    $caps['sha256'] = $zipHash !== '';
                 } catch (\Throwable $e) {
                     // no SHA256SUMS published: level without checksum
                 }
@@ -176,6 +178,24 @@ class ModuleDiscoveryService
         ]);
 
         $row = ModuleHealth::firstOrNew(['name' => $module['name']]);
+        // same version number published again with another SHA-256 (RepublishGuard)
+        $previous = $row->exists ? $row->capabilities() : [];
+        $caps['known_hashes'] = isset($previous['known_hashes']) && is_array($previous['known_hashes']) ? $previous['known_hashes'] : [];
+        $caps['republished'] = isset($previous['republished']) ? $previous['republished'] : null;
+        list($caps['known_hashes'], $republished) = RepublishGuard::track($caps['known_hashes'], $latest, $zipHash);
+        if ($republished) {
+            if (($caps['republished']['new'] ?? '') !== $republished['new']) {
+                (new Journal('', $module['name'], $module['version'], $latest))->warning(
+                    'checking',
+                    'Version '.$latest.' was published again with a different SHA-256 (before '.$republished['old'].', now '.$republished['new'].'): automatic updates paused'
+                );
+            }
+            $republished['at'] = date('c');
+            $caps['republished'] = $republished;
+        } elseif ($caps['republished'] && ($caps['republished']['version'] ?? '') !== $latest) {
+            // a newer version was published since: the old alert no longer applies
+            $caps['republished'] = null;
+        }
         $row->alias = $module['alias'];
         $row->installed_version = $module['version'];
         if ($latest !== '' || $caps['error'] === '') {

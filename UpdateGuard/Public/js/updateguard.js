@@ -21,7 +21,29 @@
         form.trigger('submit');
     });
 
-    // progress: polls the job every 3 s until it is finished, then shows the report link
+    /*
+     * The page was rendered before the operation ended: versions, states and buttons are those of before. Once the
+     * operation is finished the page is reloaded (once per operation) so that it shows the new state without a
+     * manual refresh.
+     */
+    function reloadOnce(step) {
+        var key = 'ug-reloaded-' + step;
+        try {
+            if (window.sessionStorage.getItem(key)) {
+                return;
+            }
+            window.sessionStorage.setItem(key, '1');
+        } catch (e) {
+            // storage unavailable: a finished operation has no progress box after the reload (no loop); an observed
+            // one still has one, so no automatic reload for it
+            if (/-observing$/.test(step)) {
+                return;
+            }
+        }
+        setTimeout(function () { window.location.reload(); }, 1500);
+    }
+
+    // progress: polls the job every 3 s until it is finished, then shows the report link and refreshes the page
     function poll($box) {
         var url = $box.attr('data-ug-job');
         $.getJSON(url).done(function (job) {
@@ -34,7 +56,12 @@
             if (job.finished) {
                 $box.find('.progress-bar').addClass(job.status === 'successful' ? 'progress-bar-success' : 'progress-bar-danger');
                 $box.find('.ug-progress-report').attr('href', job.report).removeClass('hidden');
+                reloadOnce(job.id + '-' + job.status);
                 return;
+            }
+            if (job.status === 'observing') {
+                // files already replaced: show the new version during the observation period
+                reloadOnce(job.id + '-observing');
             }
             setTimeout(function () { poll($box); }, 3000);
         }).fail(function () {

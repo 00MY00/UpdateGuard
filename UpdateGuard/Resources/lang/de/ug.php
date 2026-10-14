@@ -205,4 +205,15 @@ return [
     'auto_update_rules'         => 'Nie automatisch: Module mit generischer Validierung oder ohne Unterstützung, Versionen ohne SHA-256, Versionen mit neuen Datenbankmigrationen, bereits fehlgeschlagene Versionen.',
     'rollback_db_hint'          => 'Die Rücksetzung stellt die Dateien wieder her. Bringt eine neue Version Datenbankmigrationen mit, ist die automatische Rücksetzung für diese Aktualisierung deaktiviert (Datenbankzustand unbekannt), außer das Modul erklärt sie als abwärtskompatibel.',
     'retention_hint'            => 'Die letzten N Versionen behalten UND Sicherungen löschen, die älter als die Grenze sind. Die letzte bewährte Sicherung eines Moduls wird nie automatisch gelöscht.',
+
+    'set_modules_page_hint' => 'UpdateGuard auf der Modulseite von FreeScout empfehlen',
+    'modules_page_hint_help' => 'Fügt neben den von FreeScout angebotenen Aktualisierungen von Community-Modulen einen Hinweis hinzu (nie für UpdateGuard selbst oder offizielle Module).',
+    'modules_hint' => 'Empfohlen: :module mit UpdateGuard aktualisieren (SHA-256-Prüfung, Sicherung, Zustandsprüfung und automatische Rücksetzung).',
+    'modules_hint_link' => 'Mit UpdateGuard aktualisieren',
+    'modules_hint_summary' => 'Empfohlen: diese Aktualisierungen von Community-Modulen mit UpdateGuard installieren, um eine Sicherung und eine automatische Rücksetzung zu haben.',
+    'republished_title' => 'Gleiche Version mit anderem Inhalt erneut veröffentlicht',
+    'republished_text' => ':module :version wurde mit einer anderen SHA-256 erneut veröffentlicht (vorher :old, jetzt :new). Automatische Aktualisierungen dieses Moduls sind angehalten.',
+    'republished_action' => 'Auf diese Version aktualisieren (:version)',
+    'republished_hint' => 'Nur wenn Sie dieser neuen Veröffentlichung vertrauen, zum Beispiel weil Sie sie selbst veröffentlicht haben.',
+    'confirm_republished' => ':module :version aus der neuen Veröffentlichung erneut installieren? Zuerst wird gesichert und die Aktualisierung wird wie jede andere geprüft.',
 ];

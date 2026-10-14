@@ -49,6 +49,7 @@ class UpdateGuardServiceProvider extends ServiceProvider
         $this->loadRoutesFrom(__DIR__.'/../Http/routes.php');
         $this->registerMenus();
         $this->registerPhoneMenu();
+        $this->registerModulesPageHint();
         $this->registerSchedule();
     }
 
@@ -83,6 +84,51 @@ class UpdateGuardServiceProvider extends ServiceProvider
         });
     }
 
+    /**
+     * FreeScout's Manage › Modules page (route "modules"): note recommending UpdateGuard next to the updates FreeScout
+     * offers for community modules (never UpdateGuard itself, never official modules). FreeScout's page has no hook:
+     * Public/js/updateguard-modules.js adds the note from the settings written here. Setting "modules_page_hint".
+     */
+    protected function registerModulesPageHint()
+    {
+        \Eventy::addFilter('javascripts', function ($scripts) {
+            try {
+                if (\Route::is('modules')) {
+                    $scripts[] = \Module::getPublicPath(self::ALIAS).'/js/updateguard-modules.js';
+                }
+            } catch (\Throwable $e) {
+            }
+
+            return $scripts;
+        });
+        \Eventy::addAction('layout.head', function () {
+            try {
+                if (!\Route::is('modules') || !self::isAdmin() || !Settings::get('enabled') || !Settings::get('modules_page_hint')) {
+                    return;
+                }
+                $modules = [];
+                foreach (\Modules\UpdateGuard\Services\ModuleDiscoveryService::installed() as $name => $module) {
+                    if ($name === \Modules\UpdateGuard\Services\ModuleDiscoveryService::SELF
+                        || \Modules\UpdateGuard\Services\ModuleDiscoveryService::isOfficial($module['manifest'])) {
+                        continue;
+                    }
+                    $modules[$module['alias']] = ['name' => $name, 'url' => route('updateguard.module', ['name' => $name])];
+                }
+                $config = [
+                    'modules'       => $modules,
+                    'text'          => __('updateguard::ug.modules_hint', ['module' => '__MODULE__']),
+                    'link'          => __('updateguard::ug.modules_hint_link'),
+                    'summary'       => __('updateguard::ug.modules_hint_summary'),
+                    'dashboard'     => route('updateguard.dashboard'),
+                    'dashboardLink' => __('updateguard::ug.title'),
+                ];
+                echo '<meta name="updateguard-modules" content="'.e(json_encode($config, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)).'">'."\n";
+            } catch (\Throwable $e) {
+                // optional note: never break FreeScout's page
+            }
+        });
+    }
+
     public static function isAdmin()
     {
         $user = auth()->user();
@@ -104,7 +150,7 @@ class UpdateGuardServiceProvider extends ServiceProvider
         \Eventy::addAction('menu.manage.after_mailboxes', function () {
             try {
                 if (self::isAdmin()) {
-                    $alert = Ui::alert() ? ' <span class="label label-danger">!</span>' : '';
+                    $alert = Ui::alert() || Ui::republished()->isNotEmpty() ?' <span class="label label-danger">!</span>' : '';
                     echo '<li class="'.(self::isModulePage() ? 'active' : '').'"><a href="'.e(route('updateguard.dashboard')).'">'
                         .e(__('updateguard::ug.title')).$alert.'</a></li>';
                 }

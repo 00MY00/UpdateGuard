@@ -205,4 +205,15 @@ return [
     'auto_update_rules'         => 'Nunca automático: módulos con validación genérica o no compatibles, versiones sin SHA-256, versiones con nuevas migraciones de base de datos, versiones que ya fallaron.',
     'rollback_db_hint'          => 'La reversión restaura los archivos. Si una nueva versión trae migraciones, la reversión automática se desactiva para esa actualización (estado de la base desconocido), salvo que el módulo las declare compatibles con versiones anteriores.',
     'retention_hint'            => 'Conservar las N últimas versiones Y eliminar las copias más antiguas que el límite. La última copia fiable de un módulo nunca se elimina automáticamente.',
+
+    'set_modules_page_hint' => 'Recomendar UpdateGuard en la página Módulos de FreeScout',
+    'modules_page_hint_help' => 'Añade una nota junto a las actualizaciones que FreeScout ofrece para módulos de la comunidad (nunca para UpdateGuard ni para módulos oficiales).',
+    'modules_hint' => 'Recomendado: actualice :module con UpdateGuard (verificación SHA-256, copia de seguridad, control de estado y reversión automática).',
+    'modules_hint_link' => 'Actualizar con UpdateGuard',
+    'modules_hint_summary' => 'Recomendado: instale estas actualizaciones de módulos de la comunidad con UpdateGuard para tener copia de seguridad y reversión automática.',
+    'republished_title' => 'Misma versión publicada de nuevo con otro contenido',
+    'republished_text' => ':module :version se publicó de nuevo con otro SHA-256 (antes :old, ahora :new). Las actualizaciones automáticas de este módulo están en pausa.',
+    'republished_action' => 'Actualizar a esta versión (:version)',
+    'republished_hint' => 'Solo si confía en esta nueva publicación, por ejemplo porque la publicó usted.',
+    'confirm_republished' => '¿Instalar de nuevo :module :version desde la nueva publicación? Primero se hace una copia y la actualización se comprueba como cualquier otra.',
 ];

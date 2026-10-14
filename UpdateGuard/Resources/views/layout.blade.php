@@ -28,6 +28,7 @@
     @if (session('ug_error'))
         <div class="alert alert-danger">× {{ session('ug_error') }}</div>
     @endif
+    @include('updateguard::partials.republished')
     @if (session('ug_job'))
         @include('updateguard::partials.progress', ['jobId' => session('ug_job')])
     @endif

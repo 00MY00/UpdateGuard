@@ -61,6 +61,19 @@
 .ug-settings .input-group { max-width: 320px; }
 .ug-save { position: sticky; bottom: 0; background: #fff; padding: 10px 0; border-top: 1px solid #eee; }
 
+/* on / off slider (settings) — the checkbox stays in the page for the keyboard and screen readers */
+.ug-switch-row { margin: 8px 0; }
+.ug-switch { display: inline-flex; align-items: center; gap: 10px; font-weight: normal; cursor: pointer; margin: 0; }
+.ug-switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.ug-slider { position: relative; flex: none; width: 38px; height: 22px; border-radius: 11px; background: #c8ccd1; transition: background .15s; }
+.ug-slider::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.3); transition: transform .15s; }
+.ug-switch input:checked + .ug-slider { background: #3b7dd8; }
+.ug-switch input:checked + .ug-slider::after { transform: translateX(16px); }
+.ug-switch input:focus-visible + .ug-slider { outline: 2px solid #3b7dd8; outline-offset: 2px; }
+.ug-switch input:disabled + .ug-slider { opacity: .55; }
+.ug-switch input:disabled ~ .ug-switch-label { color: #777; }
+.ug-republished-actions { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
 /* phones: tables become cards, no horizontal scroll */
 @media (max-width: 767px) {
     .ug-header h1 { font-size: 18px; }

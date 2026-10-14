@@ -205,4 +205,15 @@ return [
     'auto_update_rules'         => 'Never automatic: Generic / Unsupported modules, versions without SHA-256, versions bringing new database migrations, versions that failed before.',
     'rollback_db_hint'          => 'Rollback restores the files. When a new version brings database migrations, the automatic rollback is disabled for that update (database state unknown) unless the module declares them backward-compatible.',
     'retention_hint'            => 'Keep the last N versions AND delete backups older than the age limit. The last known-good backup of a module is never deleted automatically.',
+
+    'set_modules_page_hint' => 'Recommend UpdateGuard on FreeScout\'s Modules page',
+    'modules_page_hint_help' => 'Adds a note next to the updates FreeScout offers for community modules (never for UpdateGuard itself nor for official modules).',
+    'modules_hint' => 'Recommended: update :module with UpdateGuard (SHA-256 check, backup, health check and automatic rollback).',
+    'modules_hint_link' => 'Update with UpdateGuard',
+    'modules_hint_summary' => 'Recommended: install these updates of community modules with UpdateGuard to get a backup and an automatic rollback.',
+    'republished_title' => 'Same version published again with different content',
+    'republished_text' => ':module :version was published again with a different SHA-256 (before :old, now :new). Automatic updates of this module are paused.',
+    'republished_action' => 'Update to this version (:version)',
+    'republished_hint' => 'Only if you trust this new publication, for example because you published it yourself.',
+    'confirm_republished' => 'Install :module :version again from the new publication? A backup is made first and the update is checked like any other.',
 ];

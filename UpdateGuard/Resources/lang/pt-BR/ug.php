@@ -205,4 +205,15 @@ return [
     'auto_update_rules'         => 'Nunca automático: módulos com validação genérica ou não suportados, versões sem SHA-256, versões com novas migrações de banco de dados, versões que já falharam.',
     'rollback_db_hint'          => 'A reversão restaura os arquivos. Se uma nova versão trouxer migrações, a reversão automática é desativada para essa atualização (estado do banco desconhecido), a menos que o módulo as declare retrocompatíveis.',
     'retention_hint'            => 'Manter as N últimas versões E excluir backups mais antigos que o limite. O último backup confiável de um módulo nunca é excluído automaticamente.',
+
+    'set_modules_page_hint' => 'Recomendar o UpdateGuard na página Módulos do FreeScout',
+    'modules_page_hint_help' => 'Adiciona uma nota ao lado das atualizações que o FreeScout oferece para módulos da comunidade (nunca para o próprio UpdateGuard nem para módulos oficiais).',
+    'modules_hint' => 'Recomendado: atualize :module com o UpdateGuard (verificação SHA-256, backup, verificação de saúde e reversão automática).',
+    'modules_hint_link' => 'Atualizar com o UpdateGuard',
+    'modules_hint_summary' => 'Recomendado: instale estas atualizações de módulos da comunidade com o UpdateGuard para ter backup e reversão automática.',
+    'republished_title' => 'Mesma versão publicada novamente com outro conteúdo',
+    'republished_text' => ':module :version foi publicada novamente com outro SHA-256 (antes :old, agora :new). As atualizações automáticas deste módulo estão pausadas.',
+    'republished_action' => 'Atualizar para esta versão (:version)',
+    'republished_hint' => 'Somente se você confiar nesta nova publicação, por exemplo porque você mesmo a publicou.',
+    'confirm_republished' => 'Instalar novamente :module :version a partir da nova publicação? Um backup é feito primeiro e a atualização é verificada como qualquer outra.',
 ];

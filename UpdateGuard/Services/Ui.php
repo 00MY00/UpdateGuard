@@ -102,4 +102,16 @@ class Ui
             return null;
         }
     }
+
+    /** Modules whose latest version was published again with another SHA-256 (RepublishGuard). */
+    public static function republished()
+    {
+        try {
+            return \Modules\UpdateGuard\Entities\ModuleHealth::orderBy('name')->get()->filter(function ($row) {
+                return !empty($row->capability('republished'));
+            })->values();
+        } catch (\Throwable $e) {
+            return collect();
+        }
+    }
 }

@@ -205,4 +205,15 @@ return [
     'auto_update_rules'         => 'Mai automatico: moduli con convalida generica o non supportati, versioni senza SHA-256, versioni con nuove migrazioni del database, versioni già fallite.',
     'rollback_db_hint'          => 'L\'annullamento ripristina i file. Se una nuova versione porta migrazioni del database, l\'annullamento automatico è disattivato per quell\'aggiornamento (stato del database sconosciuto), salvo che il modulo le dichiari retrocompatibili.',
     'retention_hint'            => 'Conserva le ultime N versioni E elimina i backup più vecchi del limite. L\'ultimo backup affidabile di un modulo non viene mai eliminato automaticamente.',
+
+    'set_modules_page_hint' => 'Consiglia UpdateGuard nella pagina Moduli di FreeScout',
+    'modules_page_hint_help' => 'Aggiunge una nota accanto agli aggiornamenti proposti da FreeScout per i moduli della comunità (mai per UpdateGuard stesso né per i moduli ufficiali).',
+    'modules_hint' => 'Consigliato: aggiorna :module con UpdateGuard (verifica SHA-256, backup, controllo di stato e annullamento automatico).',
+    'modules_hint_link' => 'Aggiorna con UpdateGuard',
+    'modules_hint_summary' => 'Consigliato: installa questi aggiornamenti dei moduli della comunità con UpdateGuard per avere un backup e un annullamento automatico.',
+    'republished_title' => 'Stessa versione ripubblicata con un contenuto diverso',
+    'republished_text' => ':module :version è stata ripubblicata con uno SHA-256 diverso (prima :old, ora :new). Gli aggiornamenti automatici di questo modulo sono sospesi.',
+    'republished_action' => 'Aggiorna a questa versione (:version)',
+    'republished_hint' => 'Solo se ti fidi di questa nuova pubblicazione, per esempio perché l\'hai pubblicata tu.',
+    'confirm_republished' => 'Installare di nuovo :module :version dalla nuova pubblicazione? Prima viene fatto un backup e l\'aggiornamento viene controllato come gli altri.',
 ];

@@ -42,6 +42,9 @@ class UpdateRunner
     /** @var LockService */
     protected $lock;
 
+    /** @var string SHA-256 of the archive installed by the current update */
+    protected $zipHash = '';
+
     public function __construct(?callable $out = null)
     {
         $this->out = $out;
@@ -118,7 +121,7 @@ class UpdateRunner
                 || UpdateJob::pendingFor($row->name) || in_array($row->state, ['critical', 'pending_validation'], true)) {
                 continue;
             }
-            if ($this->alreadyTried($row->name, $row->latest_version)) {
+            if ($row->capability('republished') || $this->alreadyTried($row->name, $row->latest_version)) {
                 continue;
             }
             $job = self::queue('update', $row->name, [
@@ -299,6 +302,13 @@ class UpdateRunner
 
             return $this->finish('blocked', 'version '.$to.' blocked: '.$row->blocked_reason);
         }
+        $republished = $row->capability('republished');
+        if ($republished && ($republished['version'] ?? '') === $to) {
+            if ($job->automatic) {
+                return $this->finish('blocked', 'version '.$to.' was published again with a different SHA-256: automatic update refused');
+            }
+            $j->warning('checking', 'Version '.$to.' was published again with a different SHA-256 (before '.$republished['old'].', now '.$republished['new'].'): installed on the decision of the administrator');
+        }
         if ($job->automatic && !SafetyLevel::allowsAutomatic($row->safety_level, Settings::get('auto_update_min_level'))) {
             return $this->finish('blocked', 'safety level '.$row->safety_level.' does not allow automatic updates');
         }
@@ -327,6 +337,7 @@ class UpdateRunner
 
         $this->status('verifying');
         $actual = ChecksumService::hashFile($zip);
+        $this->zipHash = $actual;
         $expected = '';
         if (!empty($caps['sums_url'])) {
             try {
@@ -616,6 +627,13 @@ class UpdateRunner
             }
             $row->last_update_at = now();
             $row->last_error = null;
+            // the content just installed (and validated) becomes the reference of this version
+            $caps = $row->capabilities();
+            $caps['known_hashes'] = RepublishGuard::accept(isset($caps['known_hashes']) && is_array($caps['known_hashes']) ? $caps['known_hashes'] : [], $job->to_version, $this->zipHash);
+            if (($caps['republished']['version'] ?? '') === $job->to_version) {
+                $caps['republished'] = null;
+            }
+            $row->capabilities = json_encode($caps, JSON_UNESCAPED_SLASHES);
             $row->save();
         }
         $this->report['final_version'] = $job->to_version;

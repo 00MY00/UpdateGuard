@@ -144,3 +144,27 @@ test('migrations: new migrations disable the automatic rollback', function () {
     same('unknown', MigrationDiff::rollbackSafety(['b.php'], []));
     same('database-safe', MigrationDiff::rollbackSafety(['b.php'], ['updateGuard' => ['migrations' => 'backward-compatible']]));
 });
+
+test('republication: same version with another SHA-256 is reported, never silently accepted', function () {
+    $a = str_repeat('a', 64);
+    $b = str_repeat('b', 64);
+    list($known, $r) = \Modules\UpdateGuard\Services\RepublishGuard::track([], '1.2.0', $a);
+    same(['1.2.0' => $a], $known);
+    same(null, $r, 'first publication');
+    list($known, $r) = \Modules\UpdateGuard\Services\RepublishGuard::track($known, '1.2.0', strtoupper($a));
+    same(null, $r, 'same content again');
+    list($known2, $r) = \Modules\UpdateGuard\Services\RepublishGuard::track($known, '1.2.0', $b);
+    same(['version' => '1.2.0', 'old' => $a, 'new' => $b], $r, 'republished');
+    same($a, $known2['1.2.0'], 'the first hash stays the reference');
+    list($known3, $r) = \Modules\UpdateGuard\Services\RepublishGuard::track($known2, '1.3.0', $b);
+    same(null, $r, 'a new version number is not a republication');
+    same($b, \Modules\UpdateGuard\Services\RepublishGuard::accept($known3, '1.2.0', $b)['1.2.0'], 'accepted after install');
+    list(, $r) = \Modules\UpdateGuard\Services\RepublishGuard::track($known, '1.2.0', '');
+    same(null, $r, 'no SHA256SUMS: nothing to compare');
+    $many = [];
+    for ($i = 0; $i < 30; $i++) {
+        list($many) = \Modules\UpdateGuard\Services\RepublishGuard::track($many, '1.0.'.$i, hash('sha256', (string) $i));
+    }
+    same(\Modules\UpdateGuard\Services\RepublishGuard::KEEP, count($many), 'history bounded');
+    check(isset($many['1.0.29']), 'most recent kept');
+});

@@ -1,9 +1,10 @@
 @extends('updateguard::layout')
 
 @php
+    // on / off settings: slider (a real checkbox underneath: keyboard, screen readers and the form work as before)
     $check = function ($name) use ($s) {
-        return '<div class="checkbox"><label><input type="checkbox" name="'.e($name).'" value="1" '.($s[$name] ? 'checked' : '').'> '
-            .e(__('updateguard::ug.set_'.$name)).'</label></div>';
+        return '<div class="ug-switch-row"><label class="ug-switch"><input type="checkbox" name="'.e($name).'" value="1" '.($s[$name] ? 'checked' : '').'>'
+            .'<span class="ug-slider" aria-hidden="true"></span><span class="ug-switch-label">'.e(__('updateguard::ug.set_'.$name)).'</span></label></div>';
     };
     $select = function ($name, $label = null) use ($s, $choices) {
         $html = '<div class="form-group"><label for="ug-'.e($name).'">'.e(__('updateguard::ug.set_'.$name)).'</label>'
@@ -53,8 +54,8 @@
         <fieldset id="ug-security">
             <legend>{{ __('updateguard::ug.section_security') }}</legend>
             {!! $check('require_sha256') !!}
-            <div class="checkbox"><label><input type="checkbox" checked disabled> {{ __('updateguard::ug.set_use_staging') }}</label></div>
-            <div class="checkbox"><label><input type="checkbox" checked disabled> {{ __('updateguard::ug.set_backup_before_update') }}</label></div>
+            <div class="ug-switch-row"><label class="ug-switch"><input type="checkbox" checked disabled><span class="ug-slider" aria-hidden="true"></span><span class="ug-switch-label">{{ __('updateguard::ug.set_use_staging') }}</span></label></div>
+            <div class="ug-switch-row"><label class="ug-switch"><input type="checkbox" checked disabled><span class="ug-slider" aria-hidden="true"></span><span class="ug-switch-label">{{ __('updateguard::ug.set_backup_before_update') }}</span></label></div>
             <p class="text-help">{{ __('updateguard::ug.always_on') }}</p>
             {!! $check('fallback_validation') !!}
         </fieldset>
@@ -84,6 +85,8 @@
             <legend>{{ __('updateguard::ug.section_notifications') }}</legend>
             {!! $check('notify_banner') !!}
             {!! $check('notify_log') !!}
+            {!! $check('modules_page_hint') !!}
+            <p class="text-help">{{ __('updateguard::ug.modules_page_hint_help') }}</p>
         </fieldset>
 
         <fieldset id="ug-advanced">

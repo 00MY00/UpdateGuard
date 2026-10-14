@@ -37,6 +37,7 @@ return [
         // Notifications
         'notify_banner'         => true,         // banner for administrators after a failure
         'notify_log'            => true,         // copy of WARNING+ lines in FreeScout's log
+        'modules_page_hint'     => true,         // note on FreeScout's Manage › Modules page recommending UpdateGuard
 
         // Advanced
         'lock_timeout_minutes'  => 60,           // a lock older than this (or whose process is gone) is abandoned

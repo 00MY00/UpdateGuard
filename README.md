@@ -97,6 +97,13 @@ Contrôle de santé en ÉCHEC → retour arrière automatique → version préc�
 - **Verrou global** (`storage/updateguard/locks/`) : une seule mise à jour / restauration à la fois ; un verrou
   abandonné (processus tué) est nettoyé et l'opération interrompue est signalée, jamais reprise à l'aveugle.
 
+### Même version republiée
+
+Un numéro de version doit toujours désigner le même contenu. UpdateGuard retient le SHA-256 de chaque version vue
+dans `SHA256SUMS`. Si la même version revient avec un autre SHA-256 (release modifiée après publication, ou source
+compromise), rien n'est installé automatiquement : bande d'alerte, mises à jour automatiques du module suspendues, et
+bouton « Mettre à jour vers cette version » pour l'administrateur qui fait confiance à la nouvelle publication.
+
 ### Restauration manuelle
 
 Toujours : verrou → **sauvegarde de la version actuelle** → vérification de l'empreinte de la sauvegarde → restauration
@@ -130,7 +137,8 @@ gravité (DEBUG, INFO, WARNING, ERROR, CRITICAL), module, versions source et cib
 ### Conflit avec l'updater de FreeScout
 
 FreeScout continue de fonctionner normalement et son bouton « Mettre à jour » n'est pas masqué (le cœur n'est pas
-modifié). Les modules gérés sont signalés « Managed by UpdateGuard » : ne les mettez pas à jour en même temps par un
+modifié). Sur la page Gérer › Modules, une note conseille de faire les mises à jour des modules communautaires avec
+UpdateGuard (désactivable : Réglages › Notifications). Les modules gérés sont signalés « Managed by UpdateGuard » : ne les mettez pas à jour en même temps par un
 autre mécanisme automatique.
 
 ## For module developers

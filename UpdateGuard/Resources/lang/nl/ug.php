@@ -205,4 +205,15 @@ return [
     'auto_update_rules'         => 'Nooit automatisch: modules met generieke validatie of zonder ondersteuning, versies zonder SHA-256, versies met nieuwe databasemigraties, eerder mislukte versies.',
     'rollback_db_hint'          => 'Terugdraaien herstelt de bestanden. Brengt een nieuwe versie databasemigraties mee, dan is automatisch terugdraaien voor die update uitgeschakeld (databasestatus onbekend), tenzij de module ze als achterwaarts compatibel aangeeft.',
     'retention_hint'            => 'De laatste N versies bewaren EN back-ups ouder dan de limiet verwijderen. De laatste betrouwbare back-up van een module wordt nooit automatisch verwijderd.',
+
+    'set_modules_page_hint' => 'UpdateGuard aanbevelen op de modulepagina van FreeScout',
+    'modules_page_hint_help' => 'Voegt een opmerking toe naast de updates die FreeScout aanbiedt voor communitymodules (nooit voor UpdateGuard zelf of officiële modules).',
+    'modules_hint' => 'Aanbevolen: werk :module bij met UpdateGuard (SHA-256-controle, back-up, gezondheidscontrole en automatisch terugdraaien).',
+    'modules_hint_link' => 'Bijwerken met UpdateGuard',
+    'modules_hint_summary' => 'Aanbevolen: installeer deze updates van communitymodules met UpdateGuard voor een back-up en automatisch terugdraaien.',
+    'republished_title' => 'Zelfde versie opnieuw gepubliceerd met andere inhoud',
+    'republished_text' => ':module :version is opnieuw gepubliceerd met een andere SHA-256 (eerst :old, nu :new). Automatische updates van deze module zijn gepauzeerd.',
+    'republished_action' => 'Bijwerken naar deze versie (:version)',
+    'republished_hint' => 'Alleen als u deze nieuwe publicatie vertrouwt, bijvoorbeeld omdat u ze zelf hebt gepubliceerd.',
+    'confirm_republished' => ':module :version opnieuw installeren vanaf de nieuwe publicatie? Eerst wordt een back-up gemaakt en de update wordt gecontroleerd zoals elke andere.',
 ];

@@ -3,6 +3,25 @@
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions [SemVer](https://semver.org/lang/fr/).
 La version du module est celle de `UpdateGuard/module.json`.
 
+## [1.3.0] - 2026-10-14
+
+### Ajouté
+- **Alerte « même version republiée avec un contenu différent »** : UpdateGuard retient le SHA-256 de chaque version
+  publiée (fichier `SHA256SUMS` du module). Si un même numéro revient avec un autre SHA-256, une bande d'alerte
+  apparaît sur toutes les pages d'UpdateGuard (et « ! » dans le menu Gérer), les mises à jour automatiques du module
+  sont suspendues, et un bouton **« Mettre à jour vers cette version »** permet de l'installer si l'on fait confiance
+  à la nouvelle publication (sauvegarde, vérifications et retour arrière comme pour toute mise à jour). Une fois
+  installée et validée, la nouvelle empreinte devient la référence.
+- **Note sur la page Gérer › Modules de FreeScout** : à côté d'une mise à jour proposée par FreeScout pour un module
+  communautaire, une note conseille de la faire avec UpdateGuard, avec un lien direct. Jamais pour UpdateGuard
+  lui-même ni pour les modules officiels. Désactivable dans Réglages › Notifications.
+- Réglages : les options marche / arrêt sont des **interrupteurs** (glissières).
+
+### Corrigé
+- **Affichage pas actualisé après une opération** : la page affichait encore les anciennes versions jusqu'à un
+  rechargement manuel. Elle se recharge maintenant d'elle-même à la fin de l'opération, et au début de la période
+  d'observation (la nouvelle version est déjà installée).
+
 ## [1.2.0] - 2026-10-14
 
 ### Corrigé

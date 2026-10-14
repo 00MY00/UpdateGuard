@@ -205,4 +205,15 @@ return [
     'auto_update_rules'         => 'Jamais en automatique : modules en validation générique ou non pris en charge, versions sans SHA-256, versions apportant des migrations de base de données, versions déjà en échec.',
     'rollback_db_hint'          => 'Le retour arrière restaure les fichiers. Si une nouvelle version apporte des migrations, le retour arrière automatique est désactivé pour cette mise à jour (état de la base inconnu), sauf si le module les déclare rétrocompatibles.',
     'retention_hint'            => 'Garder les N dernières versions ET supprimer les sauvegardes plus anciennes que la limite. La dernière sauvegarde saine d\'un module n\'est jamais supprimée automatiquement.',
+
+    'set_modules_page_hint' => 'Recommander UpdateGuard sur la page Modules de FreeScout',
+    'modules_page_hint_help' => 'Ajoute une note à côté des mises à jour proposées par FreeScout pour les modules communautaires (jamais pour UpdateGuard lui-même ni pour les modules officiels).',
+    'modules_hint' => 'Conseillé : mettez :module à jour avec UpdateGuard (vérification SHA-256, sauvegarde, contrôle de santé et retour arrière automatique).',
+    'modules_hint_link' => 'Mettre à jour avec UpdateGuard',
+    'modules_hint_summary' => 'Conseillé : installez ces mises à jour de modules communautaires avec UpdateGuard pour avoir une sauvegarde et un retour arrière automatique.',
+    'republished_title' => 'Même version republiée avec un contenu différent',
+    'republished_text' => ':module :version a été republiée avec un SHA-256 différent (avant :old, maintenant :new). Les mises à jour automatiques de ce module sont suspendues.',
+    'republished_action' => 'Mettre à jour vers cette version (:version)',
+    'republished_hint' => 'Seulement si vous faites confiance à cette nouvelle publication, par exemple parce que vous l\'avez publiée vous-même.',
+    'confirm_republished' => 'Installer à nouveau :module :version depuis la nouvelle publication ? Une sauvegarde est faite d\'abord et la mise à jour est vérifiée comme les autres.',
 ];
