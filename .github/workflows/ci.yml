@@ -28,7 +28,10 @@ jobs:
         run: php tests/unit/run.php
       - name: shellcheck
         if: matrix.php == '8.2'
-        run: shellcheck install.sh tools/build-release.sh tests/integration/run.sh tests/integration/fixtures.sh
+        run: |
+          set -o pipefail
+          # findings also as annotations (the logs of a run are not public)
+          shellcheck -f gcc install.sh tools/build-release.sh tests/integration/run.sh tests/integration/fixtures.sh             | sed -E 's/^([^:]+):([0-9]+):([0-9]+): (.*)$/::error file=,line=,col=::/'
 
   blade:
     runs-on: ubuntu-24.04

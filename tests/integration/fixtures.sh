@@ -10,6 +10,8 @@
 #
 # Test data only (domains in .test); nothing here is ever executed except the healthy test module.
 #
+# PHP code is passed in single quotes on purpose (written into the test files as is)
+# shellcheck disable=SC2016
 set -Eeuo pipefail
 
 ROOT=/tmp/ug-it

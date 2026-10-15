@@ -44,7 +44,7 @@ function ug_scan($dir, array $override = [], array $ctx = [], array $providers =
 }
 
 /** Mocked HTTP client for VirusTotal: [url-substring => [status, body]] answered in order of declaration. */
-function ug_http(array $routes, array &$calls = null)
+function ug_http(array $routes, ?array &$calls = null)
 {
     $calls = [];
 

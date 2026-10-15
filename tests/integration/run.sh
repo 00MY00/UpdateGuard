@@ -15,6 +15,8 @@
 #   6. security reports saved with the update results
 # No external service is contacted (VirusTotal stays disabled).
 #
+# PHP code is passed in single quotes on purpose (expanded by PHP, not by the shell)
+# shellcheck disable=SC2016
 set -Eeuo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -198,8 +200,9 @@ if (!$u) {
     $u->save();
 }
 $kernel = app(Illuminate\Contracts\Http\Kernel::class);
-foreach (["updateguard.dashboard", "updateguard.modules", "updateguard.restorations", "updateguard.logs", "updateguard.security", "updateguard.settings"] as $route) {
-    $request = Illuminate\Http\Request::create(route($route, [], false), "GET");
+foreach (["", "/modules", "/restorations", "/logs", "/security", "/settings"] as $route) {
+    $route = "/update-guard".$route;
+    $request = Illuminate\Http\Request::create("http://localhost".$route, "GET");
     auth()->guard()->setUser($u);
     $response = $kernel->handle($request);
     echo $route, " ", $response->getStatusCode(), "\n";
