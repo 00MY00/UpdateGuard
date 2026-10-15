@@ -212,6 +212,9 @@ foreach (["", "/modules", "/restorations", "/logs", "/security", "/settings"] as
 }' > /tmp/ug-pages.txt 2>&1 || true
 cat /tmp/ug-pages.txt
 expect "every page answers 200" bash -c "test \$(grep -c ' 200$' /tmp/ug-pages.txt) -eq 6"
+if [ "$(grep -c ' 200$' /tmp/ug-pages.txt || true)" != "6" ] && [ -n "${GITHUB_ACTIONS:-}" ]; then
+    printf '::error title=pages::%s\n' "$(grep -v '^#' /tmp/ug-pages.txt | head -c 3000 | sed ':a;N;$!ba;s/\n/%0A/g')"
+fi
 
 log "Versions"
 docker exec -w /var/www/html "$APP" sh -c 'php -r "echo \"PHP \".PHP_VERSION.PHP_EOL;"; php artisan --version'
