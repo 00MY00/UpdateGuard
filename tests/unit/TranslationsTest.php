@@ -51,7 +51,7 @@ test('translations: every key used in the code exists', function () {
     foreach (['before_update', 'before_restore', 'manual'] as $r) {
         $used[] = 'reason_'.$r;
     }
-    foreach (['updates', 'security', 'rollback', 'retention', 'notifications', 'advanced'] as $s) {
+    foreach (['updates', 'security', 'rollback', 'retention', 'notifications', 'advanced', 'blocking'] as $s) {
         $used[] = 'section_'.$s;
     }
     foreach (['hourly', 'daily', 'full', 'protected', 'never', 'warnings', 'always', 'warn', 'block', 'public', 'premium'] as $c) {

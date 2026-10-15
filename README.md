@@ -192,24 +192,31 @@ soit le nombre d'occurrences, et chaque famille de contrôles a un plafond : un 
 
 Score de 0 à 100 : **0–20 LOW, 21–49 MEDIUM, 50–79 HIGH, 80–100 CRITICAL** (seuils réglables).
 
-### Politique de sécurité
+### Règles de blocage (Réglages › Règles de blocage)
 
-Bloquer la mise à jour si (chaque règle est réglable) : empreinte différente ✓, traversée de chemin dans l'archive ✓,
-résultat critique de l'analyse locale ✓, score ≥ 80 ✓, un scanner externe donne un résultat bloquant ✓, un scanner
-externe est indisponible ☐ ; mise à jour **automatique** d'un paquet inconnu du scanner externe ✓ (elle attend que
-le paquet soit envoyé et analysé : le tableau de bord propose « Envoyer et analyser », puis la mise à jour automatique
-est retentée chaque heure).
+Une règle activée arrête la mise à jour **avant toute modification** : la version installée continue de tourner.
+Chaque règle est un interrupteur, avec une explication sous chacune ; une règle grisée dépend d'un interrupteur
+désactivé (porte de sécurité, VirusTotal, mises à jour automatiques). Les règles sont rangées par situation :
 
-- **Résumé avant installation** (mises à jour manuelles, réglable : jamais / seulement en cas d'avertissement /
-  toujours) : la mise à jour se met **en pause sans rien modifier** et la page « Rapports de sécurité » affiche le
-  résumé avec **Continuer la mise à jour** / **Annuler**. Les mises à jour automatiques ne s'arrêtent jamais : elles
-  passent ou sont bloquées.
-- **Passer outre un blocage** (réglage « Permettre aux administrateurs de passer outre », activé par défaut) : case
-  « J'ai lu les constats et j'accepte le risque » + confirmation, **« Installer quand même »**. L'action est
-  enregistrée en CRITICAL dans le journal et dans le rapport de sécurité, et ne vaut que pour le paquet analysé (même
-  SHA-256). **Jamais** possible pour une empreinte différente (ce n'est pas le fichier publié) ni pour une archive
-  dangereuse (elle ne peut pas être extraite sans risque) : ces deux règles ne peuvent qu'être désactivées dans les
-  réglages.
+| Situation | Règle (par défaut) |
+|---|---|
+| **Toujours** (manuelle et automatique) | SHA256SUMS annoncé mais illisible ✓ · empreinte différente ✓ · archive dangereuse ✓ · résultat critique de l'analyse locale ✓ · score ≥ seuil (80) ✓ · VirusTotal : résultat bloquant ✓ · VirusTotal ne répond pas (panne, clé, quota) ☐ |
+| **Mises à jour manuelles** | résumé avant installation (jamais / seulement en cas d'avertissement / toujours) · passer outre un blocage ✓ · paquet inconnu de VirusTotal : demander avant d'envoyer ✓ · envoyer automatiquement ☐ |
+| **Mises à jour automatiques** | niveau de sécurité minimum (Full Safe) · aucun SHA256SUMS publié ✓ · paquet inconnu de VirusTotal ✓ · nouvelles migrations de base de données ✓ · version republiée avec un autre SHA-256 ✓ |
+
+La logique : une mise à jour **manuelle** a quelqu'un pour décider. Elle peut se mettre en pause (résumé, accord
+d'envoi) et, si c'est permis, être installée quand même après un blocage. Une mise à jour **automatique** n'a
+personne : dans le doute elle n'est pas faite, le tableau de bord indique pourquoi, et elle peut être lancée à la
+main. Un paquet inconnu de VirusTotal est retenté chaque heure (sans requête, grâce au cache) et passe dès qu'il a
+été envoyé et analysé.
+
+- **Résumé avant installation** : la mise à jour se met **en pause sans rien modifier** et la page « Rapports de
+  sécurité » affiche le résumé avec **Continuer la mise à jour** / **Annuler**.
+- **Passer outre un blocage** : case « J'ai lu les constats et j'accepte le risque » + confirmation,
+  **« Installer quand même »**. L'action est enregistrée en CRITICAL dans le journal et dans le rapport de sécurité,
+  et ne vaut que pour le paquet analysé (même SHA-256). **Jamais** possible pour une empreinte différente (ce n'est
+  pas le fichier publié) ni pour une archive dangereuse (elle ne peut pas être extraite sans risque) : ces deux règles
+  ne peuvent qu'être désactivées.
 
 ### Analyser sans installer
 
@@ -226,8 +233,9 @@ est retentée chaque heure).
 
 Réglages › VirusTotal : clé API (enregistrée **chiffrée** avec la clé de l'application FreeScout, jamais réaffichée
 en entier), « Tester la connexion », chercher d'abord l'empreinte, envoi automatique des fichiers inconnus (désactivé),
-demander avant d'envoyer (activé), seuils de détection, comportement en cas d'échec (continuer avec avertissement /
-bloquer).
+seuils de détection, délai, compte gratuit / premium. Les règles qui concernent VirusTotal (résultat bloquant,
+service indisponible, demander avant d'envoyer, envoi automatique, paquet inconnu en mise à jour automatique) sont
+dans **Règles de blocage**.
 
 **Confidentialité** : par défaut seul le **SHA-256** du paquet est envoyé. Si VirusTotal ne connaît pas le fichier,
 UpdateGuard **demande** avant de l'envoyer : « Ce fichier n'est pas encore connu… Envoyer le module peut partager le

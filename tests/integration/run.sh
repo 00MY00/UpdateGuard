@@ -232,6 +232,17 @@ if [ "$(grep -c ' 200$' /tmp/ug-pages.txt || true)" != "8" ] && [ -n "${GITHUB_A
     printf '::error title=pages::%s\n' "$(grep -v '^#' /tmp/ug-pages.txt | head -c 3000 | sed ':a;N;$!ba;s/\n/%0A/g')"
 fi
 
+log "Settings: blocking rules section"
+php_app '
+$kernel = app(Illuminate\Contracts\Http\Kernel::class);
+auth()->guard()->setUser(\App\User::where("role", \App\User::ROLE_ADMIN)->first());
+$html = (string) $kernel->handle(Illuminate\Http\Request::create("http://localhost/update-guard/settings", "GET"))->getContent();
+echo substr_count($html, "id=\"ug-blocking\""), " ", substr_count($html, "data-ug-depends="), " ", substr_count($html, "ug-setting-help"), " ",
+    substr_count($html, "name=\"sec_auto_block_migrations\""), "\n";' > /tmp/ug-settings.txt 2>&1 || true
+cat /tmp/ug-settings.txt
+expect "blocking section, dependencies and explanations are rendered" \
+    php -r '$p = explode(" ", trim(file_get_contents("/tmp/ug-settings.txt"))); exit(count($p) === 4 && $p[0] === "1" && $p[1] >= 15 && $p[2] >= 15 && $p[3] === "1" ? 0 : 1);'
+
 log "Dashboard: packages unknown to VirusTotal are offered for upload"
 php_app '
 \App\Option::set("updateguard.vt_enabled", 1);

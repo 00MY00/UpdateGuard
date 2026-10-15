@@ -72,6 +72,12 @@
 .ug-switch input:focus-visible + .ug-slider { outline: 2px solid #3b7dd8; outline-offset: 2px; }
 .ug-switch input:disabled + .ug-slider { opacity: .55; }
 .ug-switch input:disabled ~ .ug-switch-label { color: #777; }
+/* settings: explanation under a rule, rules depending on a switch that is off */
+.ug-setting-help { font-size: 12px; margin: 2px 0 4px 48px; }
+.form-group .ug-setting-help { margin-left: 0; }
+.ug-dep-off { opacity: .45; pointer-events: none; }
+.ug-settings fieldset > h4 { border-top: 1px solid #eee; padding-top: 12px; }
+
 /* packages unknown to VirusTotal (dashboard) */
 .ug-unknown-list { list-style: none; padding: 0; margin: 0 0 10px; }
 .ug-unknown-list li { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee; }

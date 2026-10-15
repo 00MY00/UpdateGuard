@@ -315,7 +315,6 @@ test('VirusTotal: timeout / errors never crash UpdateGuard; policy decides', fun
     same('ERROR', $report['external']['VirusTotal']['status']);
     same('confirm', $report['decision'], 'default: continue with a warning (manual update asks)');
     same('allowed', ug_scan(ug_module_with(''), [], [], [$down], null, [], true)['decision'], 'automatic: continue with warning');
-    same('blocked', ug_scan(ug_module_with(''), ['vt_on_failure' => 'block'], [], [$down])['decision'], 'On VirusTotal failure: block');
     same('blocked', ug_scan(ug_module_with(''), ['sec_block_external_unavailable' => true], [], [$down])['decision']);
     same(2, SecurityGate::exitCode(ug_scan(ug_module_with(''), [], [], [$down])), 'exit code 2 = scanner error');
     $bad = (new VirusTotalScanner('key', ug_http(['/files/' => [401, '']])))->lookupHash($sha);

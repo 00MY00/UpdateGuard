@@ -122,7 +122,7 @@ class UpdateRunner
                 || UpdateJob::pendingFor($row->name) || in_array($row->state, ['critical', 'pending_validation'], true)) {
                 continue;
             }
-            if ($row->capability('republished') || $this->alreadyTried($row->name, $row->latest_version)) {
+            if (($row->capability('republished') && Settings::get('sec_auto_block_republished')) || $this->alreadyTried($row->name, $row->latest_version)) {
                 continue;
             }
             $job = self::queue('update', $row->name, [
@@ -348,7 +348,7 @@ class UpdateRunner
         }
         $republished = $row->capability('republished');
         if ($republished && ($republished['version'] ?? '') === $to) {
-            if ($job->automatic) {
+            if ($job->automatic && Settings::get('sec_auto_block_republished')) {
                 return $this->finish('blocked', 'version '.$to.' was published again with a different SHA-256: automatic update refused');
             }
             $j->warning('checking', 'Version '.$to.' was published again with a different SHA-256 (before '.$republished['old'].', now '.$republished['new'].'): installed on the decision of the administrator');
@@ -450,7 +450,7 @@ class UpdateRunner
         } else {
             ReportService::step($this->report, 'checksum', 'NOT AVAILABLE', 'sha256 of the archive: '.$actual);
             $j->warning('verifying', 'No SHA256SUMS published: integrity not verified (sha256 '.$actual.')');
-            if ($job->automatic) {
+            if ($job->automatic && Settings::get('sec_auto_require_sha256')) {
                 $this->cleanWork();
 
                 return $this->finish('blocked', 'automatic update refused without SHA-256');
@@ -510,7 +510,7 @@ class UpdateRunner
         $j->info('staging', 'Archive extracted in staging and checked');
         if ($kind === 'unknown') {
             $j->warning('staging', 'New migrations ('.implode(', ', $added).'): database state unknown after a rollback, automatic rollback disabled for this update');
-            if ($job->automatic) {
+            if ($job->automatic && Settings::get('sec_auto_block_migrations')) {
                 $this->cleanWork();
 
                 return $this->finish('blocked', 'new migrations: automatic update disabled (database state unknown)');

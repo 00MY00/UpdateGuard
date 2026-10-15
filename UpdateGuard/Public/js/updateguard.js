@@ -136,7 +136,26 @@
         });
     }
 
+    /*
+     * Settings that only matter when other switches are on (data-ug-depends="security_gate,vt_enabled"): greyed out
+     * and not clickable while one of them is off. The fields are NOT disabled, so their value is kept and saved.
+     */
+    function applyDepends($form) {
+        $form.find('[data-ug-depends]').each(function () {
+            var off = $(this).attr('data-ug-depends').split(',').some(function (name) {
+                var $master = $form.find('input[type="checkbox"][name="' + name + '"]');
+                return $master.length > 0 && !$master.is(':checked');
+            });
+            $(this).toggleClass('ug-dep-off', off).attr('aria-disabled', off ? 'true' : null);
+        });
+    }
+
     $(function () {
+        $('form.ug-settings').each(function () {
+            var $form = $(this);
+            applyDepends($form);
+            $form.on('change', 'input[type="checkbox"]', function () { applyDepends($form); });
+        });
         $('form[data-ug-autosave]').each(function () { autosave($(this)); });
         $('[data-ug-job]').each(function () { poll($(this)); });
     });

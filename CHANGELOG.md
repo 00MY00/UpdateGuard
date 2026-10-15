@@ -3,6 +3,19 @@
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions [SemVer](https://semver.org/lang/fr/).
 La version du module est celle de `UpdateGuard/module.json`.
 
+## [1.7.0] - 2026-10-15
+
+### Modifié
+- **Réglages › Règles de blocage** : toutes les règles qui peuvent arrêter une mise à jour sont réunies dans une
+  section, rangées par situation — **Toujours**, **Mises à jour manuelles**, **Mises à jour automatiques** — chacune
+  avec un interrupteur et une explication. Les règles qui dépendent d'un interrupteur désactivé (porte de sécurité,
+  VirusTotal, mises à jour automatiques, retour arrière automatique) sont grisées ; leur valeur est conservée.
+- **Trois règles des mises à jour automatiques, jusqu'ici fixes, deviennent réglables** (activées par défaut, donc
+  sans changement de comportement) : refuser un paquet sans SHA256SUMS, refuser une mise à jour qui apporte des
+  migrations de base de données, refuser une version republiée avec un autre SHA-256.
+- Le réglage « En cas d'échec de VirusTotal » faisait double emploi avec « Un scanner externe est indisponible » :
+  il n'en reste qu'un, dans les règles de blocage.
+
 ## [1.6.0] - 2026-10-15
 
 ### Modifié

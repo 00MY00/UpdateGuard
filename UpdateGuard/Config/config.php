@@ -57,6 +57,9 @@ return [
         'sec_block_external'             => true,   // an external scanner reports a blocking result
         'sec_block_external_unavailable' => false,
         'sec_auto_require_known'         => true,   // automatic update: package must be known to the external scanner
+        'sec_auto_require_sha256'        => true,   // automatic update: refused when no SHA256SUMS is published
+        'sec_auto_block_migrations'      => true,   // automatic update: refused when it brings database migrations
+        'sec_auto_block_republished'     => true,   // automatic update: refused for a version republished with another SHA-256
         'sec_allow_override'             => true,
         'sec_save_reports'               => true,
         'sec_confirm'                    => 'warnings', // never | warnings | always (manual updates)
@@ -76,7 +79,6 @@ return [
         'vt_warning_min'                 => 1,
         'vt_high_min'                    => 3,
         'vt_critical_min'                => 6,
-        'vt_on_failure'                  => 'warn', // warn | block
         'vt_timeout'                     => 30,
         'vt_plan'                        => 'public', // public (free: limited) | premium (no local limit)
         'vt_rate_minute'                 => 4,        // free API limits (VirusTotal, 2026): 4 / min, 500 / day,

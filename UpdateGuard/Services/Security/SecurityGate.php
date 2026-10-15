@@ -149,7 +149,7 @@ class SecurityGate
     protected static function external(SecurityScannerProviderInterface $provider, $sha256, $zip, array $s, ?ScanCache $cache, array $decisions, $automatic)
     {
         $name = $provider->getName();
-        $blockOnError = $name === 'VirusTotal' && ($s['vt_on_failure'] ?? 'warn') === 'block';
+        $blockOnError = false; // "external scanner unavailable" is the policy rule sec_block_external_unavailable
         try {
             if (!$provider->isConfigured()) {
                 $r = ScanResult::make($name, ScanResult::ERROR, 'not configured (API key missing)');
