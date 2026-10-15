@@ -232,6 +232,21 @@ if [ "$(grep -c ' 200$' /tmp/ug-pages.txt || true)" != "8" ] && [ -n "${GITHUB_A
     printf '::error title=pages::%s\n' "$(grep -v '^#' /tmp/ug-pages.txt | head -c 3000 | sed ':a;N;$!ba;s/\n/%0A/g')"
 fi
 
+log "Dashboard: packages unknown to VirusTotal are offered for upload"
+php_app '
+\App\Option::set("updateguard.vt_enabled", 1);
+$report = ["module" => "UgTestModule", "scan_mode" => "published", "external" => ["VirusTotal" => ["status" => "NOT_AVAILABLE", "unknown" => true]]];
+\DB::table("updateguard_security_reports")->insert(["module" => "UgTestModule", "to_version" => "1.3.0", "sha256" => str_repeat("a", 64),
+    "result" => "scan", "decision" => "allowed", "report" => json_encode($report), "created_at" => now(), "updated_at" => now()]);'
+php_app '
+$kernel = app(Illuminate\Contracts\Http\Kernel::class);
+auth()->guard()->setUser(\App\User::where("role", \App\User::ROLE_ADMIN)->first());
+$response = $kernel->handle(Illuminate\Http\Request::create("http://localhost/update-guard", "GET"));
+echo $response->getStatusCode(), " ", substr_count((string) $response->getContent(), "ug-unknown-vt"), "\n";' > /tmp/ug-unknown.txt 2>&1 || true
+cat /tmp/ug-unknown.txt
+expect "dashboard shows the \"not known by VirusTotal\" panel" grep -q '^200 1$' /tmp/ug-unknown.txt
+php_app '\App\Option::set("updateguard.vt_enabled", 0);'
+
 log "Versions"
 docker exec -w /var/www/html "$APP" sh -c 'php -r "echo \"PHP \".PHP_VERSION.PHP_EOL;"; php artisan --version'
 

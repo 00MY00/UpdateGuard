@@ -101,11 +101,18 @@ class SecurityController extends BaseController
     }
 
     /** "Scan all modules" (dashboard): one queued job, one security report per module. */
-    public function scanAll()
+    public function scanAll(Request $request)
     {
-        $this->admin();
+        $user = $this->admin();
+        $attributes = [];
+        if ($request->input('upload')) {
+            // "Upload all unknown packages": packages already known are taken from the cache (no request); only the
+            // unknown ones are sent, after the privacy warning confirmed on the page
+            $attributes['security_decision'] = 'upload';
+            (new Journal('', '*'))->warning('security', 'Upload of the unknown packages to external scanners accepted by '.($user->getFullName() ?: 'Administrator'));
+        }
 
-        return $this->queued($this->queue('scan', '*'));
+        return $this->queued($this->queue('scan', '*', $attributes));
     }
 
     /** "Security scan" of one module (module page). */

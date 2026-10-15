@@ -139,6 +139,43 @@ class Ui
         }
     }
 
+    /**
+     * Modules whose LAST security report says the package is unknown to an external scanner (VirusTotal) and was not
+     * uploaded: the dashboard and the module page propose "Upload and scan". Only while VirusTotal is enabled.
+     * @return \Illuminate\Support\Collection of SecurityReport
+     */
+    public static function unknownToScanners()
+    {
+        try {
+            if (!Settings::get('vt_enabled')) {
+                return collect();
+            }
+            $ids = \Modules\UpdateGuard\Entities\SecurityReport::selectRaw('max(id) as id')->groupBy('module')->pluck('id');
+
+            return \Modules\UpdateGuard\Entities\SecurityReport::whereIn('id', $ids)->orderBy('module')->get()->filter(function ($row) {
+                return self::isUnknownToScanners($row);
+            })->values();
+        } catch (\Throwable $e) {
+            return collect();
+        }
+    }
+
+    /** The package of this report can be sent: unknown to a scanner that accepts uploads, not installed files. */
+    public static function isUnknownToScanners($row)
+    {
+        $data = $row->data();
+        if (($data['scan_mode'] ?? '') === 'installed' || (string) $row->sha256 === '' || !is_dir(Paths::modules($row->module))) {
+            return false;
+        }
+        foreach ((array) ($data['external'] ?? []) as $e) {
+            if (!empty($e['unknown']) && empty($e['skipped'])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /** Modules whose latest version was published again with another SHA-256 (RepublishGuard). */
     public static function republished()
     {

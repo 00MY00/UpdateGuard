@@ -368,4 +368,11 @@ return [
     'set_vt_quota_month' => 'Consultas por mes',
     'choice_public' => 'Gratuita (API pública, limitada)',
     'choice_premium' => 'Premium (sin límite)',
+
+    // 1.5.1: packages unknown to VirusTotal
+    'vt_unknown_title' => 'Aún no conocidos por VirusTotal',
+    'vt_unknown_text' => 'Último análisis: :count paquete(s) aún no son conocidos por VirusTotal. Solo se envían si usted lo pide.',
+    'vt_unknown_module' => 'VirusTotal todavía no conoce este paquete.',
+    'vt_upload_all' => 'Enviar todo y analizar',
+    'vt_upload_all_quota' => 'Cada envío consume parte de la cuota de VirusTotal.',
 ];

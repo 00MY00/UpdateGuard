@@ -368,4 +368,11 @@ return [
     'set_vt_quota_month' => 'Opzoekingen per maand',
     'choice_public' => 'Gratis (publieke API, beperkt)',
     'choice_premium' => 'Premium (zonder limiet)',
+
+    // 1.5.1: packages unknown to VirusTotal
+    'vt_unknown_title' => 'Nog niet bekend bij VirusTotal',
+    'vt_unknown_text' => 'Laatste scan: :count pakket(ten) zijn nog niet bekend bij VirusTotal. Ze worden alleen verstuurd als u erom vraagt.',
+    'vt_unknown_module' => 'VirusTotal kent dit pakket nog niet.',
+    'vt_upload_all' => 'Alles uploaden en scannen',
+    'vt_upload_all_quota' => 'Elke upload verbruikt een deel van het VirusTotal-quotum.',
 ];

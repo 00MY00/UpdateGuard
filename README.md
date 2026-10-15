@@ -215,6 +215,8 @@ externe est indisponible ☐.
   publié du module (dernière version, comme pour une mise à jour) est analysé sans rien installer, ou les fichiers
   installés si le module ne publie pas de paquet. L'analyse tourne en tâche de fond (planificateur) ; à la fin la
   page ouvre le rapport, et la fiche du module affiche la dernière analyse.
+- Si VirusTotal ne connaît pas encore un paquet, le **tableau de bord** et la fiche du module proposent « Envoyer et
+  analyser » (ou « Tout envoyer et analyser »), toujours après l'avertissement de confidentialité.
 - Les fichiers installés ne sont analysés que localement : il n'y a pas de paquet à chercher ni à envoyer.
 - Commande équivalente : `php artisan updateguard:scan Module [--installed] [--json]`.
 

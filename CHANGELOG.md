@@ -3,6 +3,20 @@
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions [SemVer](https://semver.org/lang/fr/).
 La version du module est celle de `UpdateGuard/module.json`.
 
+## [1.5.1] - 2026-10-15
+
+### Corrigé
+- **Téléphone : le menu « ⋮ » s'ouvrait hors de l'écran.** Sur une carte sans bouton « Mettre à jour », le bouton ⋮
+  était à gauche et son menu, aligné à droite, partait hors de l'écran. Le menu s'ouvre maintenant en panneau en bas
+  de l'écran, toujours visible, avec des entrées plus grandes au doigt ; le bouton ⋮ est toujours à droite. Les
+  pastilles longues passent à la ligne au lieu d'élargir la carte. Vérifié par capture à 390 px de large.
+
+### Ajouté
+- **Paquets inconnus de VirusTotal proposés à l'envoi depuis le tableau de bord** : après une analyse, un encadré
+  liste les modules dont le paquet n'est pas encore connu de VirusTotal, avec « Envoyer et analyser » pour chacun et
+  « Tout envoyer et analyser » (les paquets déjà connus viennent du cache, sans requête). Même bouton sur la fiche du
+  module. Toujours après l'avertissement de confidentialité, jamais automatiquement.
+
 ## [1.5.0] - 2026-10-15
 
 ### Ajouté

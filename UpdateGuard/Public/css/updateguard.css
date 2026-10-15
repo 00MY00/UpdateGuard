@@ -72,6 +72,11 @@
 .ug-switch input:focus-visible + .ug-slider { outline: 2px solid #3b7dd8; outline-offset: 2px; }
 .ug-switch input:disabled + .ug-slider { opacity: .55; }
 .ug-switch input:disabled ~ .ug-switch-label { color: #777; }
+/* packages unknown to VirusTotal (dashboard) */
+.ug-unknown-list { list-style: none; padding: 0; margin: 0 0 10px; }
+.ug-unknown-list li { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee; }
+.ug-unknown-list li:last-child { border-bottom: 0; }
+
 /* Security Gate */
 .ug-settings h4 { margin-top: 18px; }
 .ug-settings h5 { margin: 14px 0 6px; font-weight: 600; }
@@ -93,8 +98,22 @@
     .ug-cards td { border: 0 !important; padding: 3px 0 !important; display: flex; justify-content: space-between; gap: 10px; text-align: right; }
     .ug-cards td[data-label]::before { content: attr(data-label); font-weight: 600; text-align: left; color: #555; }
     .ug-cards td.ug-card-title { font-size: 15px; font-weight: 600; text-align: left; display: block; padding-bottom: 6px !important; }
-    .ug-cards td.ug-actions { justify-content: space-between; padding-top: 8px !important; }
-    .ug-cards td.ug-actions .btn-primary { flex: 1 1 auto; }
+    /* cards never wider than the screen: long badges and values wrap */
+    .ug-cards tr { box-sizing: border-box; max-width: 100%; }
+    .ug-cards td { min-width: 0; flex-wrap: wrap; align-items: center; }
+    .ug-cards td[data-label]::before { flex: 0 0 auto; margin-right: auto; }
+    .ug-cards .ug-badge { white-space: normal; text-align: left; max-width: 100%; }
+    .ug-cards td.ug-actions { justify-content: flex-end; gap: 8px; white-space: normal; padding-top: 8px !important; }
+    .ug-cards td.ug-actions form { flex: 1 1 auto; }
+    .ug-cards td.ug-actions .btn-primary { width: 100%; }
+    /* "⋮" menu: a panel at the bottom of the screen, always visible whatever the position of the button */
+    .ug-cards .dropdown { margin-left: auto; }
+    .ug-cards .dropdown-menu {
+        position: fixed; left: 12px; right: 12px; top: auto; bottom: 12px; min-width: 0;
+        max-height: 70vh; overflow-y: auto; z-index: 1060; border-radius: 8px; padding: 6px 0;
+        box-shadow: 0 6px 24px rgba(0, 0, 0, .25);
+    }
+    .ug-cards .dropdown-menu > li > a { padding: 12px 18px; font-size: 15px; white-space: normal; }
     .ug-stat { flex-basis: 33%; border-bottom: 1px solid #eee; }
     .ug-log-line { flex-direction: column; }
     .ug-log-time, .ug-log-level, .ug-log-module { min-width: 0; }

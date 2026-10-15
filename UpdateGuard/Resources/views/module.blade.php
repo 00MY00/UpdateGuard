@@ -106,6 +106,15 @@
         <p>{!! $Ui::risk($lastScan->score, $lastScan->level) !!}
             {{ $lastScan->created_at }} · {{ __('updateguard::ug.sec_decision_'.$lastScan->decision) }}
             · <a href="{{ route('updateguard.security.show', ['id' => $lastScan->id]) }}">{{ __('updateguard::ug.view_report') }}</a></p>
+        @if (\Modules\UpdateGuard\Services\Settings::get('vt_enabled') && $Ui::isUnknownToScanners($lastScan))
+            <div class="alert alert-info">
+                {{ __('updateguard::ug.vt_unknown_module') }}
+                <form method="POST" action="{{ route('updateguard.security.upload', ['id' => $lastScan->id]) }}" class="ug-inline" data-ug-confirm="{{ __('updateguard::ug.sec_upload_text') }}">
+                    {{ csrf_field() }}
+                    <button type="submit" class="btn btn-default btn-sm">{{ __('updateguard::ug.sec_upload_and_scan') }}</button>
+                </form>
+            </div>
+        @endif
     @else
         <p class="text-help">{{ __('updateguard::ug.sec_never_scanned') }}</p>
     @endif
