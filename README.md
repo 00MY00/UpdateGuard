@@ -1,4 +1,5 @@
-# UpdateGuard pour FreeScout
+#Modules Updates Guard (UpdateGuard)
+## UpdateGuard pour FreeScout
 
 Module complémentaire de [FreeScout](https://freescout.net) qui ajoute une **couche de mise à jour sécurisée** pour les
 modules communautaires : vérification SHA-256, staging, sauvegarde, contrôles de santé, détection de crash, retour
