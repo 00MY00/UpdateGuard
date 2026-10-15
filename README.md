@@ -157,6 +157,17 @@ avec l'interrupteur général « Activer la porte de sécurité » coupé, Updat
 > confidentialité. Une empreinte SHA-256 prouve l'**intégrité** (c'est bien le fichier publié), pas la
 > **fiabilité** de son auteur. L'administrateur reste responsable de la décision d'installer du code tiers.
 
+> **⚠ Modules qui utilisent ou intègrent de l'IA** (assistant, résumé ou réponse automatique aux tickets, appel à
+> un modèle de langage comme OpenAI, Claude, Mistral, un modèle local…) : **soyez particulièrement prudent.**
+> UpdateGuard ne peut **pas encore** vérifier ces modules contre l'**injection de prompt** (prompt injection).
+> Un e-mail, un ticket ou une pièce jointe peut contenir des instructions cachées qui détournent l'IA : divulguer des
+> données de clients ou de la configuration, modifier ou supprimer des tickets, envoyer des réponses ou des e-mails à
+> la place d'un agent. Ce risque ne vient pas du code du paquet mais des **données traitées pendant l'utilisation** :
+> ni l'analyse locale, ni le score, ni VirusTotal ne le détectent, et un paquet « sain » pour UpdateGuard peut quand
+> même être exposé. Avant d'installer ou de mettre à jour un tel module : vérifiez ce que l'IA peut lire et faire
+> (accès en lecture seule si possible, aucune action automatique sans validation humaine), quelles données partent
+> vers un service externe, et testez-le d'abord sur une instance de test.
+
 ### Analyse locale (sans service externe)
 
 | Contrôle | Ce qui est recherché |
