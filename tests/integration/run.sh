@@ -189,8 +189,7 @@ expect "report of the healthy update records success" \
 
 log "Pages (HTTP 200 for an administrator)"
 php_app '
-$u = \App\User::where("role", \App\User::ROLE_ADMIN)->first();
-if (!$u) {
+if (!\App\User::where("role", \App\User::ROLE_ADMIN)->exists()) {
     $u = new \App\User();
     $u->first_name = "Admin";
     $u->last_name = "Test";
@@ -198,21 +197,27 @@ if (!$u) {
     $u->password = bcrypt("test-only-password");
     $u->role = \App\User::ROLE_ADMIN;
     $u->save();
-}
+}'
+security_id="$(php_app 'echo (int) \DB::table("updateguard_security_reports")->max("id");')"
+: > /tmp/ug-pages.txt
+# one PHP process per page: the HTTP kernel is not meant to handle several requests in one process
+for page in "" /modules /modules/UgTestModule /restorations /logs /security "/security/$security_id" /settings; do
+    php_app '
+$path = "/update-guard'"$page"'";
 $kernel = app(Illuminate\Contracts\Http\Kernel::class);
-foreach (["", "/modules", "/restorations", "/logs", "/security", "/settings"] as $route) {
-    $route = "/update-guard".$route;
-    $request = Illuminate\Http\Request::create("http://localhost".$route, "GET");
-    auth()->guard()->setUser($u);
-    $response = $kernel->handle($request);
-    echo $route, " ", $response->getStatusCode(), "\n";
-    if ($response->getStatusCode() !== 200) {
-        echo substr(strip_tags((string) $response->getContent()), 0, 600), "\n";
-    }
-}' > /tmp/ug-pages.txt 2>&1 || true
+auth()->guard()->setUser(\App\User::where("role", \App\User::ROLE_ADMIN)->first());
+$response = $kernel->handle(Illuminate\Http\Request::create("http://localhost".$path, "GET"));
+echo $path, " ", $response->getStatusCode(), "\n";
+if ($response->getStatusCode() !== 200) {
+    // the exception, from Laravel'"'"'s log
+    $log = glob(storage_path("logs/*.log"));
+    $lines = $log ? preg_grep("/production\\.ERROR/", file(end($log))) : [];
+    echo "   ", substr((string) end($lines), 0, 700), "\n";
+}' >> /tmp/ug-pages.txt 2>&1 || true
+done
 cat /tmp/ug-pages.txt
-expect "every page answers 200" bash -c "test \$(grep -c ' 200$' /tmp/ug-pages.txt) -eq 6"
-if [ "$(grep -c ' 200$' /tmp/ug-pages.txt || true)" != "6" ] && [ -n "${GITHUB_ACTIONS:-}" ]; then
+expect "every page answers 200" bash -c "test \$(grep -c ' 200$' /tmp/ug-pages.txt) -eq 8"
+if [ "$(grep -c ' 200$' /tmp/ug-pages.txt || true)" != "8" ] && [ -n "${GITHUB_ACTIONS:-}" ]; then
     printf '::error title=pages::%s\n' "$(grep -v '^#' /tmp/ug-pages.txt | head -c 3000 | sed ':a;N;$!ba;s/\n/%0A/g')"
 fi
 
