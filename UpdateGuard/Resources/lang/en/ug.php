@@ -375,4 +375,5 @@ return [
     'vt_unknown_module' => 'VirusTotal does not know this package yet.',
     'vt_upload_all' => 'Upload all and scan',
     'vt_upload_all_quota' => 'Each upload uses part of the VirusTotal quota.',
+    'set_sec_auto_require_known' => 'Automatic updates: do not install a package unknown to the external scanner',
 ];

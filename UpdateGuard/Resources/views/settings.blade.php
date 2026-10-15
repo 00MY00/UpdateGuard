@@ -79,6 +79,7 @@
                 {!! $number('sec_score_threshold', '/ 100', 1, 100) !!}
                 {!! $check('sec_block_external') !!}
                 {!! $check('sec_block_external_unavailable') !!}
+                {!! $check('sec_auto_require_known') !!}
 
                 <h5>{{ __('updateguard::ug.sec_update_behavior') }}</h5>
                 {!! $check('sec_allow_override') !!}

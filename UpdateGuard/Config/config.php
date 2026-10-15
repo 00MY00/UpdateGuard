@@ -56,6 +56,7 @@ return [
         'sec_score_threshold'            => 80,
         'sec_block_external'             => true,   // an external scanner reports a blocking result
         'sec_block_external_unavailable' => false,
+        'sec_auto_require_known'         => true,   // automatic update: package must be known to the external scanner
         'sec_allow_override'             => true,
         'sec_save_reports'               => true,
         'sec_confirm'                    => 'warnings', // never | warnings | always (manual updates)

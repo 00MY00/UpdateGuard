@@ -292,9 +292,9 @@ test('VirusTotal: unknown hash asks before upload; never uploads silently', func
     same('upload_consent', $r['decision']);
     same(true, $r['external']['VirusTotal']['unknown']);
     check(!preg_grep('/^POST/', $calls), 'nothing uploaded without consent');
-    // automatic update: never asks, never uploads
+    // automatic update: never asks, never uploads, and does not install an unknown package (default setting)
     $r = ug_scan(ug_module_with(''), [], ['zip' => $zip, 'sha256' => $sha], [$vt], null, [], true);
-    same('allowed', $r['decision']);
+    same('blocked', $r['decision']);
     check(!preg_grep('/^POST/', $calls), 'still nothing uploaded');
     // the administrator agreed
     $r = ug_scan(ug_module_with(''), [], ['zip' => $zip, 'sha256' => $sha], [$vt], null, ['upload']);
@@ -429,4 +429,16 @@ test('VirusTotal: not asked when the local checks already block (quota saved); u
         return time() + 2 * 86400;
     };
     same(null, $cache->get('VirusTotal', $sha), 'unknown answers expire after 1 day');
+});
+
+test('automatic update: a package unknown to VirusTotal is not installed until it is checked', function () {
+    $unknown = new VirusTotalScanner('key', ug_http(['/files/' => [404, '']]));
+    $r = ug_scan(ug_module_with(''), [], [], [$unknown], null, [], true);
+    same('blocked', $r['decision'], 'automatic update waits for the scan');
+    check(in_array('unknown_to:VirusTotal', $r['reasons'], true), implode(',', $r['reasons']));
+    check(!$r['overridable'], 'automatic: nothing to override');
+    same('allowed', ug_scan(ug_module_with(''), ['sec_auto_require_known' => false], [], [$unknown], null, [], true)['decision'], 'setting off');
+    $known = new VirusTotalScanner('key', ug_http(['/files/' => [200, ug_vt_stats(0)]]));
+    same('allowed', ug_scan(ug_module_with(''), [], [], [$known], null, [], true)['decision'], 'known and clean: installed automatically');
+    same('upload_consent', ug_scan(ug_module_with(''), [], [], [$unknown])['decision'], 'manual update: asks before uploading');
 });

@@ -375,4 +375,5 @@ return [
     'vt_unknown_module' => 'VirusTotal kennt dieses Paket noch nicht.',
     'vt_upload_all' => 'Alle hochladen und prüfen',
     'vt_upload_all_quota' => 'Jedes Hochladen verbraucht einen Teil des VirusTotal-Kontingents.',
+    'set_sec_auto_require_known' => 'Automatische Aktualisierungen: kein Paket installieren, das dem externen Scanner unbekannt ist',
 ];

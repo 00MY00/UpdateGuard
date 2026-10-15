@@ -54,6 +54,12 @@ class SecurityPolicy
             if (!empty($r['upload_candidate'])) {
                 $uploadCandidates[] = $name;
             }
+            // automatic update of a package the external scanner has never seen: not installed until it is checked
+            // (the dashboard offers "Upload and scan"; the next automatic run tries again once it is known)
+            if ($automatic && !empty($r['unknown']) && empty($r['skipped']) && !empty($s['sec_auto_require_known'])) {
+                $blocked = true;
+                $out['reasons'][] = 'unknown_to:'.$name;
+            }
         }
 
         if ($blocked) {

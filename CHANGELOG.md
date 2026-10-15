@@ -3,6 +3,18 @@
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions [SemVer](https://semver.org/lang/fr/).
 La version du module est celle de `UpdateGuard/module.json`.
 
+## [1.6.0] - 2026-10-15
+
+### Modifié
+- **Mise à jour automatique d'un paquet inconnu de VirusTotal : plus installée tant qu'il n'a pas été vérifié**
+  (nouveau réglage « Mises à jour automatiques : ne pas installer un paquet inconnu du scanner externe », activé par
+  défaut, sans effet si VirusTotal est désactivé). Le tableau de bord propose alors « Envoyer et analyser » ; la mise
+  à jour automatique est retentée chaque heure (sans requête VirusTotal grâce au cache) et passe dès que le paquet est
+  connu et sain. Avant, une mise à jour automatique installait un paquet inconnu avec la seule analyse locale.
+- Rappel du fonctionnement avant une mise à jour : paquet **déjà connu** de VirusTotal → son résultat est utilisé
+  directement (une seule requête, aucun envoi) ; paquet **inconnu** → mise à jour manuelle en pause avec « Envoyer et
+  analyser » / « Continuer sans envoyer » / « Annuler ».
+
 ## [1.5.1] - 2026-10-15
 
 ### Corrigé

@@ -143,8 +143,18 @@ class UpdateRunner
     {
         return UpdateJob::where('module', $module)->where('to_version', $version)->where('automatic', true)
             ->where(function ($q) {
-                $q->whereIn('status', ['blocked', 'rolled_back', 'rollback_failed'])
-                    ->orWhere('created_at', '>', now()->subDay());
+                // ordinary attempts: once a day, never again after a block / rollback
+                $q->where(function ($q2) {
+                    $q2->whereRaw("COALESCE(message, '') NOT LIKE ?", ['%unknown_to:%'])
+                        ->where(function ($q3) {
+                            $q3->whereIn('status', ['blocked', 'rolled_back', 'rollback_failed'])
+                                ->orWhere('created_at', '>', now()->subDay());
+                        });
+                // package not known yet by the external scanner: tried again every hour (no request: the "unknown"
+                // answer is cached, replaced by the real result as soon as the package was uploaded and scanned)
+                })->orWhere(function ($q2) {
+                    $q2->whereRaw("COALESCE(message, '') LIKE ?", ['%unknown_to:%'])->where('created_at', '>', now()->subHour());
+                });
             })->exists();
     }
 

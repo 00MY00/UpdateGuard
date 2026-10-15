@@ -196,7 +196,9 @@ Score de 0 à 100 : **0–20 LOW, 21–49 MEDIUM, 50–79 HIGH, 80–100 CRITICA
 
 Bloquer la mise à jour si (chaque règle est réglable) : empreinte différente ✓, traversée de chemin dans l'archive ✓,
 résultat critique de l'analyse locale ✓, score ≥ 80 ✓, un scanner externe donne un résultat bloquant ✓, un scanner
-externe est indisponible ☐.
+externe est indisponible ☐ ; mise à jour **automatique** d'un paquet inconnu du scanner externe ✓ (elle attend que
+le paquet soit envoyé et analysé : le tableau de bord propose « Envoyer et analyser », puis la mise à jour automatique
+est retentée chaque heure).
 
 - **Résumé avant installation** (mises à jour manuelles, réglable : jamais / seulement en cas d'avertissement /
   toujours) : la mise à jour se met **en pause sans rien modifier** et la page « Rapports de sécurité » affiche le

@@ -375,4 +375,5 @@ return [
     'vt_unknown_module' => 'VirusTotal todavía no conoce este paquete.',
     'vt_upload_all' => 'Enviar todo y analizar',
     'vt_upload_all_quota' => 'Cada envío consume parte de la cuota de VirusTotal.',
+    'set_sec_auto_require_known' => 'Actualizaciones automáticas: no instalar un paquete desconocido para el escáner externo',
 ];
