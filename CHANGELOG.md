@@ -3,6 +3,24 @@
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions [SemVer](https://semver.org/lang/fr/).
 La version du module est celle de `UpdateGuard/module.json`.
 
+## [1.5.0] - 2026-10-15
+
+### Ajouté
+- **Boutons d'analyse de sécurité** sans rien installer : « Analyser tous les modules » sur le tableau de bord et
+  « Analyse de sécurité » sur la fiche d'un module. Le paquet publié du module est analysé (analyse locale + VirusTotal
+  s'il est activé), ou les fichiers installés quand le module ne publie pas de paquet. À la fin, la page ouvre le
+  rapport ; la fiche du module affiche la dernière analyse. Sur un rapport dont le paquet est inconnu de VirusTotal :
+  bouton « Envoyer et analyser » (avec l'avertissement de confidentialité).
+- **Réglages enregistrés automatiquement** à chaque changement, sans bouton (le bouton Enregistrer reste si
+  JavaScript est désactivé).
+- **Clé API VirusTotal testée dès sa saisie** : refusée par VirusTotal, elle n'est pas enregistrée ; VirusTotal
+  injoignable ou limite atteinte, elle est enregistrée avec un avertissement.
+- **Limites de l'API gratuite de VirusTotal** (4 recherches / minute, 500 / jour, 15,5 K / mois, modifiables) :
+  compteur partagé, attente d'un créneau pour les tâches de fond, jamais d'attente dans une page, utilisation du jour
+  et du mois affichée ; choix « Gratuit » / « Premium (sans limite) ». Économies : résultat en cache par empreinte,
+  réponse « inconnu » gardée 1 jour, aucune recherche pour un paquet déjà bloqué par l'analyse locale, moins
+  d'interrogations après un envoi.
+
 ## [1.4.0] - 2026-10-15
 
 ### Ajouté

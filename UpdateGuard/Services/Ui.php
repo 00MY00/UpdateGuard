@@ -24,6 +24,7 @@ class Ui
         'queued'             => ['●', 'state_queued', 'info'],
         'awaiting_decision'  => ['!', 'state_awaiting', 'warn'],
         'cancelled'          => ['×', 'state_cancelled', 'muted'],
+        'scan'               => ['🛡', 'state_scan', 'info'],
     ];
 
     /** Security statuses: [symbol, css modifier] (text = the status itself, translated) */

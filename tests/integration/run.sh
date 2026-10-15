@@ -187,6 +187,17 @@ expect "report of the malicious package records the block" \
 expect "report of the healthy update records success" \
     bash -c "printf '%s' \"\$0\" | php -r '\$ok = false; foreach (json_decode(stream_get_contents(STDIN), true) as \$r) { \$ok = \$ok || (\$r[\"to_version\"] === \"1.3.0\" && \$r[\"result\"] === \"successful\"); } exit(\$ok ? 0 : 1);'" "$reports"
 
+log "7. \"Scan all modules\" button: scan job run by the scheduler"
+php_app 'Modules\UpdateGuard\Services\UpdateRunner::queue("scan", "*", ["triggered_by" => "integration test"]);'
+artisan updateguard:run --no-auto >/tmp/ug-scan-run.txt 2>&1 || true
+tail -n 8 /tmp/ug-scan-run.txt
+scans="$(php_app 'echo json_encode(\DB::table("updateguard_security_reports")->where("result", "scan")->where("update_id", "!=", "")->get(["module","decision","score","level"]));')"
+printf '%s\n' "$scans"
+expect "one scan report per installed module" \
+    bash -c "printf '%s' \"\$0\" | php -r '\$m = array_column(json_decode(stream_get_contents(STDIN), true), \"module\"); exit(in_array(\"UpdateGuard\", \$m, true) && in_array(\"UgTestModule\", \$m, true) ? 0 : 1);'" "$scans"
+expect "UpdateGuard's own published package is not blocked (no false positive)" \
+    bash -c "printf '%s' \"\$0\" | php -r '\$ok = false; foreach (json_decode(stream_get_contents(STDIN), true) as \$r) { \$ok = \$ok || (\$r[\"module\"] === \"UpdateGuard\" && \$r[\"decision\"] !== \"blocked\"); } exit(\$ok ? 0 : 1);'" "$scans"
+
 log "Pages (HTTP 200 for an administrator)"
 php_app '
 if (!\App\User::where("role", \App\User::ROLE_ADMIN)->exists()) {

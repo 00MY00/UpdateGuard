@@ -29,7 +29,12 @@ class SecurityController extends BaseController
         if ($module !== '' && Paths::isModuleName($module)) {
             $query->where('module', $module);
         }
-        $reports = $query->paginate(30)->appends(['module' => $module]);
+        // reports of one operation (e.g. "Scan all modules")
+        $updateId = (string) $request->input('update_id', '');
+        if (\Modules\UpdateGuard\Services\ReportService::isUpdateId($updateId)) {
+            $query->where('update_id', $updateId);
+        }
+        $reports = $query->paginate(30)->appends(['module' => $module, 'update_id' => $updateId]);
         $modules = SecurityReport::distinct()->orderBy('module')->pluck('module');
 
         return view('updateguard::security_reports', compact('reports', 'modules', 'module'));
@@ -93,6 +98,37 @@ class SecurityController extends BaseController
 
         return redirect()->route('updateguard.module', ['name' => $job->module])->with('ug_job', $job->id)
             ->with('ug_success', __('updateguard::ug.queued', ['id' => $job->update_id]));
+    }
+
+    /** "Scan all modules" (dashboard): one queued job, one security report per module. */
+    public function scanAll()
+    {
+        $this->admin();
+
+        return $this->queued($this->queue('scan', '*'));
+    }
+
+    /** "Security scan" of one module (module page). */
+    public function scanModule($name)
+    {
+        $this->admin();
+
+        return $this->queued($this->queue('scan', $this->moduleName($name)));
+    }
+
+    /**
+     * "Upload and scan" from a report whose package is unknown to an external scanner: a new scan of the published
+     * package with the upload accepted (privacy warning shown and confirmed on the page, decision logged).
+     */
+    public function upload($id)
+    {
+        $user = $this->admin();
+        $row = SecurityReport::findOrFail($id);
+        $name = $this->moduleName($row->module);
+        (new Journal('', $name, $row->from_version, $row->to_version))
+            ->warning('security', 'Upload of the package to external scanners accepted by '.($user->getFullName() ?: 'Administrator'));
+
+        return $this->queued($this->queue('scan', $name, ['security_decision' => 'upload']));
     }
 
     public function cleanup()

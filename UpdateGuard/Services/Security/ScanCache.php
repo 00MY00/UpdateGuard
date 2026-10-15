@@ -43,14 +43,22 @@ class ScanCache
             return null;
         }
         $result = ScanResult::fromArray($data['result']);
+        // "unknown to the provider" is kept 1 day only: someone may submit the file meanwhile
+        if ($result->unknown && $data['time'] < call_user_func($this->clock) - self::UNKNOWN_LIFETIME) {
+            return null;
+        }
         $result->cached = true;
 
         return $result;
     }
 
+    /** Lifetime of an "unknown hash" answer (saves lookups of the limited free APIs). */
+    const UNKNOWN_LIFETIME = 86400;
+
     public function put($provider, $sha256, ScanResult $result)
     {
-        if ($this->lifetime === 0 || !$result->isDefinitive() || strlen((string) $sha256) !== 64) {
+        $unknown = $result->unknown && $result->status === ScanResult::NOT_AVAILABLE;
+        if ($this->lifetime === 0 || (!$result->isDefinitive() && !$unknown) || strlen((string) $sha256) !== 64) {
             return;
         }
         if (!is_dir($this->dir)) {

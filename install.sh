@@ -15,7 +15,7 @@
 #
 set -Eeuo pipefail
 
-SCRIPT_VERSION="1.4.0"   # same as UpdateGuard/module.json (checked by tools/build-release.sh)
+SCRIPT_VERSION="1.5.0"   # same as UpdateGuard/module.json (checked by tools/build-release.sh)
 REPO_URL="${UG_REPO_URL:-https://github.com/00MY00/UpdateGuard}"
 MODULE="UpdateGuard"
 ALIAS="updateguard"

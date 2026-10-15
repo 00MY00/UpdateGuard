@@ -65,6 +65,11 @@
             if (job.finished) {
                 $box.find('.progress-bar').addClass(job.status === 'successful' ? 'progress-bar-success' : 'progress-bar-danger');
                 $box.find('.ug-progress-report').attr('href', job.report).removeClass('hidden');
+                if (job.type === 'scan' && $box.attr('data-ug-follow') === '1') {
+                    // a scan the administrator just started: open its result
+                    window.location.href = job.report;
+                    return;
+                }
                 reloadOnce(job.id + '-' + job.status);
                 return;
             }
@@ -78,7 +83,61 @@
         });
     }
 
+    /*
+     * Settings saved automatically on every change ("change" fires when a checkbox / select changes, or when a text
+     * or number field is left): no Save button needed. A new VirusTotal API key is tested by the server before it is
+     * saved; the result is shown under the field.
+     */
+    function autosave($form) {
+        var $status = $('.ug-autosave-status');
+        var $key = $form.find('input[name="vt_api_key"]');
+        var $keyStatus = $form.find('.ug-key-status');
+        var pending = null;
+        $form.find('.ug-save').hide();
+        function save() {
+            var keyTyped = $.trim($key.val() || '') !== '';
+            $status.removeClass('text-danger').text($status.attr('data-saving'));
+            if (keyTyped) {
+                $keyStatus.attr('class', 'ug-key-status text-help').text($keyStatus.attr('data-testing'));
+            }
+            $.ajax({
+                url: $form.attr('action'),
+                method: 'POST',
+                data: $form.serialize(),
+                dataType: 'json',
+                headers: {'X-Requested-With': 'XMLHttpRequest'}
+            }).done(function (r) {
+                $status.text('✓ ' + r.message);
+                if (r.key) {
+                    $keyStatus.attr('class', 'ug-key-status ' + (r.key.ok ? 'text-success' : (r.key.saved ? 'text-warning' : 'text-danger')))
+                        .text((r.key.ok ? '✓ ' : '! ') + r.key.message);
+                    if (r.key.saved) {
+                        // the key itself is never shown again: only its mask
+                        $key.val('').attr('placeholder', r.mask || '');
+                        $form.find('input[name="vt_api_key_remove"]').prop('checked', false);
+                    }
+                }
+            }).fail(function () {
+                $status.addClass('text-danger').text('× ' + $status.attr('data-error'));
+                $form.find('.ug-save').show();
+            });
+        }
+        $form.on('change', 'input, select, textarea', function () {
+            clearTimeout(pending);
+            pending = setTimeout(save, 300);
+        });
+        // Enter in a field: save now instead of submitting the page
+        $form.on('submit', function (e) {
+            if (!e.originalEvent || !e.originalEvent.submitter || !$(e.originalEvent.submitter).attr('formaction')) {
+                e.preventDefault();
+                clearTimeout(pending);
+                save();
+            }
+        });
+    }
+
     $(function () {
+        $('form[data-ug-autosave]').each(function () { autosave($(this)); });
         $('[data-ug-job]').each(function () { poll($(this)); });
     });
 })(window.jQuery);

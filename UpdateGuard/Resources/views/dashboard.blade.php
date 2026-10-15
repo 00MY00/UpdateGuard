@@ -16,6 +16,10 @@
             {{ csrf_field() }}
             <button type="submit" class="btn btn-primary">{{ __('updateguard::ug.check_all') }}</button>
         </form>
+        <form method="POST" action="{{ route('updateguard.scan_all') }}" class="ug-inline" data-ug-confirm="{{ __('updateguard::ug.sec_scan_all_confirm') }}">
+            {{ csrf_field() }}
+            <button type="submit" class="btn btn-default">🛡 {{ __('updateguard::ug.sec_scan_all') }}</button>
+        </form>
     </div>
 
     <div class="ug-stats">

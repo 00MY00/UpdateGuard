@@ -38,6 +38,10 @@ Route::group([
     Route::get('/security', $admins + ['uses' => 'SecurityController@index'])->name('updateguard.security');
     Route::post('/security/cleanup', $admins + ['uses' => 'SecurityController@cleanup'])->name('updateguard.security.cleanup');
     Route::get('/security/{id}', $admins + ['uses' => 'SecurityController@show'])->where('id', '[0-9]+')->name('updateguard.security.show');
+    Route::post('/security/{id}/upload', $admins + ['uses' => 'SecurityController@upload'])->where('id', '[0-9]+')->name('updateguard.security.upload');
+    // security scans without installing: all modules, or one module
+    Route::post('/scan-all', $admins + ['uses' => 'SecurityController@scanAll'])->name('updateguard.scan_all');
+    Route::post('/modules/{name}/scan', $admins + ['uses' => 'SecurityController@scanModule'])->where('name', '[A-Za-z0-9_\-]+')->name('updateguard.module.scan');
     Route::post('/security/{id}/decide', $admins + ['uses' => 'SecurityController@decide'])->where('id', '[0-9]+')->name('updateguard.security.decide');
     Route::post('/settings/virustotal/test', $admins + ['uses' => 'SecurityController@testVirusTotal'])->name('updateguard.security.test_vt');
 

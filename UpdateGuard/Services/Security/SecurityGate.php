@@ -105,7 +105,20 @@ class SecurityGate
         $report['local_level'] = $local && $local->findings ? RiskScore::compute($local->findings, self::thresholds($s))['level'] : '';
 
         // external providers (hash first, upload only with consent or the explicit setting)
+        // already blocked by the local checks (and not overridable, or no override asked): external scanners are not
+        // asked — limited free APIs (VirusTotal: 4 / min, 500 / day) are kept for packages that could be installed
+        $localOnly = array_merge($report, ['score' => RiskScore::compute($report['findings'], self::thresholds($s))['score'], 'external' => []]);
+        $localPolicy = SecurityPolicy::decide($localOnly, $s, $decisions, $automatic);
+        $skipExternal = $localPolicy['decision'] === 'blocked';
         foreach ($providers as $provider) {
+            if ($skipExternal) {
+                $report['external'][$provider->getName()] = array_merge(
+                    ScanResult::make($provider->getName(), ScanResult::NOT_AVAILABLE, 'not asked: already blocked by the local checks (quota saved)')->toArray(),
+                    ['block_on_error' => false, 'upload_candidate' => false, 'skipped' => true]
+                );
+                $report['enabled'][] = $provider->getName();
+                continue;
+            }
             $report['external'][$provider->getName()] = self::external($provider, $report['sha256'], (string) ($ctx['zip'] ?? ''), $s, $cache, $decisions, $automatic);
             $report['enabled'][] = $provider->getName();
             $level = $report['external'][$provider->getName()]['level'] ?? '';
@@ -140,20 +153,26 @@ class SecurityGate
         try {
             if (!$provider->isConfigured()) {
                 $r = ScanResult::make($name, ScanResult::ERROR, 'not configured (API key missing)');
-            } elseif ($cache && ($cached = $cache->get($name, $sha256))) {
-                $r = $cached;
             } else {
-                $hashFirst = $name !== 'VirusTotal' || !empty($s['vt_hash_first']);
-                $r = $hashFirst ? $provider->lookupHash($sha256) : ScanResult::make($name, ScanResult::NOT_AVAILABLE, 'hash lookup disabled', ['unknown' => true]);
-                if ($r->unknown && $provider->supportsUpload()) {
-                    $auto = $name === 'VirusTotal' ? !empty($s['vt_auto_upload']) : false;
-                    $consented = in_array('upload', $decisions, true);
-                    if (($auto || $consented) && $zip !== '' && is_file($zip)) {
-                        $r = $provider->scanFile($zip);
+                // 1. cache (SHA-256 + provider): no request for a package already looked up
+                $r = $cache ? $cache->get($name, $sha256) : null;
+                // 2. hash lookup
+                if (!$r) {
+                    $hashFirst = $name !== 'VirusTotal' || !empty($s['vt_hash_first']);
+                    $r = $hashFirst ? $provider->lookupHash($sha256) : ScanResult::make($name, ScanResult::NOT_AVAILABLE, 'hash lookup disabled', ['unknown' => true]);
+                    if ($cache && $hashFirst) {
+                        $cache->put($name, $sha256, $r);
                     }
                 }
-                if ($cache) {
-                    $cache->put($name, $sha256, $r);
+                // 3. upload, only with the administrator's consent or the explicit setting
+                if ($r->unknown && $provider->supportsUpload()) {
+                    $auto = $name === 'VirusTotal' ? !empty($s['vt_auto_upload']) : false;
+                    if (($auto || in_array('upload', $decisions, true)) && $zip !== '' && is_file($zip)) {
+                        $r = $provider->scanFile($zip);
+                        if ($cache) {
+                            $cache->put($name, $sha256, $r);
+                        }
+                    }
                 }
             }
         } catch (\Throwable $e) {

@@ -35,11 +35,37 @@ class Providers
 
     public static function virusTotal(array $s, $apiKey = null)
     {
-        return new VirusTotalScanner($apiKey !== null ? $apiKey : Secrets::get('vt_api_key'), self::http((int) ($s['vt_timeout'] ?? 30)), [
+        $http = self::http((int) ($s['vt_timeout'] ?? 30));
+        $limiter = self::virusTotalLimiter($s);
+        if ($limiter) {
+            // free (public) API: spend from the shared budget; background processes wait for a slot, pages never
+            $http = $limiter->wrap($http, PHP_SAPI === 'cli' ? 60 : 0);
+        }
+        $scanner = new VirusTotalScanner($apiKey !== null ? $apiKey : Secrets::get('vt_api_key'), $http, [
             'warning'  => (int) ($s['vt_warning_min'] ?? 1),
             'high'     => (int) ($s['vt_high_min'] ?? 3),
             'critical' => (int) ($s['vt_critical_min'] ?? 6),
             'block'    => (int) ($s['vt_block_threshold'] ?? 3),
+        ]);
+        if ($limiter) {
+            // each poll of an analysis is a request: fewer polls on the free API
+            $scanner->polls = 8;
+        }
+
+        return $scanner;
+    }
+
+    /** Budget of the free VirusTotal API (null for a premium account). */
+    public static function virusTotalLimiter(array $s)
+    {
+        if (($s['vt_plan'] ?? 'public') === 'premium') {
+            return null;
+        }
+
+        return new RateLimiter(Paths::base('security/virustotal-budget.json'), [
+            'minute' => (int) ($s['vt_rate_minute'] ?? 4),
+            'day'    => (int) ($s['vt_quota_day'] ?? 500),
+            'month'  => (int) ($s['vt_quota_month'] ?? 15500),
         ]);
     }
 

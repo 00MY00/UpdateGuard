@@ -209,6 +209,15 @@ externe est indisponible ☐.
   dangereuse (elle ne peut pas être extraite sans risque) : ces deux règles ne peuvent qu'être désactivées dans les
   réglages.
 
+### Analyser sans installer
+
+- **Tableau de bord › « Analyser tous les modules »** et **fiche d'un module › « Analyse de sécurité »** : le paquet
+  publié du module (dernière version, comme pour une mise à jour) est analysé sans rien installer, ou les fichiers
+  installés si le module ne publie pas de paquet. L'analyse tourne en tâche de fond (planificateur) ; à la fin la
+  page ouvre le rapport, et la fiche du module affiche la dernière analyse.
+- Les fichiers installés ne sont analysés que localement : il n'y a pas de paquet à chercher ni à envoyer.
+- Commande équivalente : `php artisan updateguard:scan Module [--installed] [--json]`.
+
 ### VirusTotal (facultatif, désactivé par défaut)
 
 Réglages › VirusTotal : clé API (enregistrée **chiffrée** avec la clé de l'application FreeScout, jamais réaffichée
@@ -221,6 +230,15 @@ UpdateGuard **demande** avant de l'envoyer : « Ce fichier n'est pas encore conn
 paquet avec VirusTotal et ses partenaires de sécurité » — **Annuler**, **Continuer sans envoyer**, **Envoyer et
 analyser**. Rien n'est envoyé silencieusement ; l'envoi automatique n'a lieu que si vous l'activez. Ne l'activez pas
 pour des modules privés ou sous licence.
+
+**Limites de l'API gratuite** (VirusTotal : 4 recherches par minute, 500 par jour, 15,5 K par mois ; modifiables
+dans les réglages, ou « Premium » pour aucune limite locale) : UpdateGuard tient un compteur partagé par toutes les
+tâches, attend un créneau libre pour les tâches de fond, n'attend jamais dans une page web et affiche l'utilisation
+du jour et du mois. Pour économiser : résultat gardé en cache par empreinte, réponse « inconnu » gardée 1 jour,
+aucune recherche pour un paquet déjà bloqué par l'analyse locale, moins d'interrogations après un envoi.
+
+La **clé API est testée dès sa saisie** : refusée par VirusTotal, elle n'est pas enregistrée. Les réglages sont
+**enregistrés automatiquement** à chaque changement.
 
 Résultat normalisé (malveillant, suspect, inoffensif, non détecté). Par défaut : 0 détection PASS, 1–2 WARNING,
 3–5 HIGH, 6 et plus CRITICAL ; blocage à partir de 3 détections malveillantes (une seule détection ne bloque pas).

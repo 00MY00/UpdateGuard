@@ -45,7 +45,7 @@ test('translations: every key used in the code exists', function () {
     foreach ($statuses as $s) {
         $used[] = 'job_'.$s;
     }
-    foreach (['update', 'restore', 'health', 'check'] as $t) {
+    foreach (['update', 'restore', 'health', 'check', 'scan'] as $t) {
         $used[] = 'type_'.$t;
     }
     foreach (['before_update', 'before_restore', 'manual'] as $r) {
@@ -54,7 +54,7 @@ test('translations: every key used in the code exists', function () {
     foreach (['updates', 'security', 'rollback', 'retention', 'notifications', 'advanced'] as $s) {
         $used[] = 'section_'.$s;
     }
-    foreach (['hourly', 'daily', 'full', 'protected', 'never', 'warnings', 'always', 'warn', 'block'] as $c) {
+    foreach (['hourly', 'daily', 'full', 'protected', 'never', 'warnings', 'always', 'warn', 'block', 'public', 'premium'] as $c) {
         $used[] = 'choice_'.$c;
     }
     $used[] = 'job_awaiting_decision';

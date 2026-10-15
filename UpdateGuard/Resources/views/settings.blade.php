@@ -34,7 +34,9 @@
             <li><a href="#ug-{{ $section }}">{{ __('updateguard::ug.section_'.$section) }}</a></li>
         @endforeach
     </ul>
-    <form method="POST" action="{{ route('updateguard.settings.save') }}" class="ug-settings">
+    {{-- saved automatically on every change (updateguard.js); the Save button is for browsers without JavaScript --}}
+    <div class="ug-autosave-status text-help" aria-live="polite" data-saving="{{ __('updateguard::ug.saving') }}" data-error="{{ __('updateguard::ug.save_failed') }}"></div>
+    <form method="POST" action="{{ route('updateguard.settings.save') }}" class="ug-settings" data-ug-autosave="1">
         {{ csrf_field() }}
 
         <fieldset id="ug-updates">
@@ -108,6 +110,7 @@
                     <input type="password" class="form-control" id="ug-vt_api_key" name="vt_api_key" value="" autocomplete="new-password"
                            placeholder="{{ $vtKeyMask !== '' ? $vtKeyMask : __('updateguard::ug.vt_api_key_none') }}">
                     <p class="text-help">{{ __('updateguard::ug.vt_api_key_help') }}</p>
+                    <div class="ug-key-status" aria-live="polite" data-testing="{{ __('updateguard::ug.vt_key_testing') }}"></div>
                     @if ($vtKeyMask !== '')
                         <div class="ug-switch-row"><label class="ug-switch"><input type="checkbox" name="vt_api_key_remove" value="1"><span class="ug-slider" aria-hidden="true"></span><span class="ug-switch-label">{{ __('updateguard::ug.vt_api_key_remove') }}</span></label></div>
                     @endif
@@ -123,6 +126,19 @@
                 {!! $number('vt_critical_min', __('updateguard::ug.vt_detections'), 1, 100) !!}
                 {!! $select('vt_on_failure') !!}
                 {!! $number('vt_timeout', 's', 5, 300) !!}
+
+                <h5>{{ __('updateguard::ug.vt_limits') }}</h5>
+                {!! $select('vt_plan') !!}
+                <p class="text-help">{{ __('updateguard::ug.vt_limits_help') }}</p>
+                {!! $number('vt_rate_minute', '/ min', 1, 10000) !!}
+                {!! $number('vt_quota_day', __('updateguard::ug.vt_per_day'), 1, 10000000) !!}
+                {!! $number('vt_quota_month', __('updateguard::ug.vt_per_month'), 1, 100000000) !!}
+                @if ($vtUsage)
+                    <p class="ug-vt-usage">{{ __('updateguard::ug.vt_usage', [
+                        'day' => $vtUsage['day'], 'day_max' => $vtUsage['limits']['day'],
+                        'month' => $vtUsage['month'], 'month_max' => $vtUsage['limits']['month'],
+                    ]) }}</p>
+                @endif
                 <p class="text-help">{{ __('updateguard::ug.vt_false_positives') }}</p>
             </div>
         </fieldset>

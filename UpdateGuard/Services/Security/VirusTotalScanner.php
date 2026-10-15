@@ -70,6 +70,14 @@ class VirusTotalScanner implements SecurityScannerProviderInterface
         return call_user_func($this->http, $method, self::BASE.$path, $options);
     }
 
+    /** Message of a failed request: quota / rate limit of the local budget as is, otherwise "unreachable: ...". */
+    protected static function failure(\Throwable $e)
+    {
+        $m = $e->getMessage();
+
+        return (stripos($m, 'quota') !== false || stripos($m, 'rate limit') !== false) ? $m : 'unreachable: '.$m;
+    }
+
     protected function error($message)
     {
         return ScanResult::make($this->getName(), ScanResult::ERROR, $message);
@@ -90,7 +98,7 @@ class VirusTotalScanner implements SecurityScannerProviderInterface
         try {
             $r = $this->call('GET', '/files/'.strtolower($sha256));
         } catch (\Throwable $e) {
-            return $this->error('unreachable: '.$e->getMessage());
+            return $this->error(self::failure($e));
         }
         if ($r['status'] === 404) {
             return ScanResult::make($this->getName(), ScanResult::NOT_AVAILABLE, 'file not known by VirusTotal', ['unknown' => true]);
@@ -137,7 +145,7 @@ class VirusTotalScanner implements SecurityScannerProviderInterface
                 call_user_func($this->sleep, 15);
             }
         } catch (\Throwable $e) {
-            return $this->error('unreachable: '.$e->getMessage());
+            return $this->error(self::failure($e));
         }
 
         return $this->error('analysis not finished in time (timeout)');
@@ -179,7 +187,7 @@ class VirusTotalScanner implements SecurityScannerProviderInterface
             // a well-known hash (empty file): 200 or 404 both prove that the key works
             $r = $this->call('GET', '/files/'.self::EMPTY_SHA256);
         } catch (\Throwable $e) {
-            return new ConnectionResult(false, 'unreachable: '.$e->getMessage());
+            return new ConnectionResult(false, self::failure($e));
         }
         if ($r['status'] === 200 || $r['status'] === 404) {
             return new ConnectionResult(true, 'OK');

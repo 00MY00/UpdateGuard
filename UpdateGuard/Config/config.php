@@ -77,6 +77,10 @@ return [
         'vt_critical_min'                => 6,
         'vt_on_failure'                  => 'warn', // warn | block
         'vt_timeout'                     => 30,
+        'vt_plan'                        => 'public', // public (free: limited) | premium (no local limit)
+        'vt_rate_minute'                 => 4,        // free API limits (VirusTotal, 2026): 4 / min, 500 / day,
+        'vt_quota_day'                   => 500,      // 15.5 K / month; adjustable if the account differs
+        'vt_quota_month'                 => 15500,
 
         // Advanced
         'lock_timeout_minutes'  => 60,           // a lock older than this (or whose process is gone) is abandoned

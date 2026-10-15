@@ -45,7 +45,8 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><th>{{ __('updateguard::ug.sec_external_scan') }}</th><td>{!! $Ui::secStatus('DISABLED') !!}</td></tr>
+                    <tr><th>{{ __('updateguard::ug.sec_external_scan') }}</th><td>{!! $Ui::secStatus('DISABLED') !!}
+                        @if (($report['scan_mode'] ?? '') === 'installed') <small class="text-help">{{ __('updateguard::ug.sec_installed_no_external') }}</small>@endif</td></tr>
                 @endforelse
                 <tr><th>{{ __('updateguard::ug.sec_risk') }}</th><td>{!! $Ui::risk($report['score'] ?? 0, $report['level'] ?? 'LOW') !!}</td></tr>
                 <tr><th>SHA-256</th><td><code class="ug-hash">{{ $row->sha256 ?: '—' }}</code></td></tr>
@@ -58,6 +59,24 @@
                         @if ($row->rollback !== '') · {{ __('updateguard::ug.rollback') }}: {{ $row->rollback }}@endif</td></tr>
                 @endif
             </table>
+
+            @php
+                $unknownTo = array_keys(array_filter($report['external'] ?? [], function ($e) {
+                    return !empty($e['unknown']) && empty($e['skipped']);
+                }));
+            @endphp
+            @if ($unknownTo && $row->result === 'scan' && ($report['scan_mode'] ?? '') !== 'installed')
+                {{-- scan of a published package unknown to an external scanner: upload only on the administrator's request --}}
+                <div class="alert alert-info">
+                    <strong>{{ __('updateguard::ug.sec_upload_title') }}</strong><br>
+                    {{ __('updateguard::ug.sec_upload_text') }}
+                    <form method="POST" action="{{ route('updateguard.security.upload', ['id' => $row->id]) }}" class="ug-override-form"
+                          data-ug-confirm="{{ __('updateguard::ug.sec_upload_text') }}">
+                        {{ csrf_field() }}
+                        <button type="submit" class="btn btn-default btn-sm">{{ __('updateguard::ug.sec_upload_and_scan') }} ({{ implode(', ', $unknownTo) }})</button>
+                    </form>
+                </div>
+            @endif
 
             @if ($decision === 'blocked' && empty($report['overridable']))
                 <div class="alert alert-danger"><strong>× {{ __('updateguard::ug.sec_blocked') }}</strong><br>{{ __('updateguard::ug.sec_not_overridable') }}</div>

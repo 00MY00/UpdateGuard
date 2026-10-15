@@ -21,6 +21,7 @@ class Settings
         'report_retention_days' => [30, 90, 180, 365, 0],
         'sec_confirm'           => ['never', 'warnings', 'always'],
         'vt_on_failure'         => ['warn', 'block'],
+        'vt_plan'               => ['public', 'premium'],
     ];
 
     public static function defaults()

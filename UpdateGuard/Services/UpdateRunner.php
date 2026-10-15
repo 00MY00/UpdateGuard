@@ -182,6 +182,9 @@ class UpdateRunner
                 case 'check':
                     $this->runCheck();
                     break;
+                case 'scan':
+                    $this->runScan();
+                    break;
                 default:
                     $this->finish('failed', 'unknown job type');
             }
@@ -1036,6 +1039,35 @@ class UpdateRunner
         $row = ModuleHealth::named($module['name']);
         $status = $row ? $row->health_status : ($causes ? 'failed' : 'healthy');
         $this->finish($causes ? 'failed' : 'successful', $causes ? 'health check failed ('.implode(', ', $causes).')' : 'health: '.$status, $status);
+    }
+
+    /**
+     * Security scan without installing (buttons "Security scan" / "Scan all modules"): the published package when
+     * the module publishes one, the installed files otherwise. One security report per module, linked to this job.
+     */
+    protected function runScan()
+    {
+        $this->status('verifying');
+        $names = $this->job->module === '*' ? array_keys(ModuleDiscoveryService::installed()) : [$this->job->module];
+        $upload = in_array('upload', $this->job->decisions(), true);
+        $results = [];
+        $blocked = 0;
+        foreach ($names as $name) {
+            $this->journal->module = $name;
+            try {
+                $r = Security\PackageScan::run($name, 'auto', ['upload' => $upload], $this->job->update_id);
+                $results[] = $name.' '.$r['score'].'/100 '.$r['level'];
+                $blocked += $r['decision'] === 'blocked' ? 1 : 0;
+                $level = $r['decision'] === 'blocked' ? 'error' : (Security\Rules::ORDER[$r['level']] >= Security\Rules::ORDER['MEDIUM'] ? 'warning' : 'info');
+                $this->journal->{$level}('security', 'Security scan ('.$r['scan_mode'].'): risk '.$r['score'].'/100 '.$r['level'].', decision '.$r['decision']);
+            } catch (\Throwable $e) {
+                $results[] = $name.' error';
+                $this->journal->warning('security', 'Security scan not possible: '.$e->getMessage());
+            }
+        }
+        $this->journal->module = $this->job->module;
+        $this->report['final_version'] = '';
+        $this->finish('successful', count($names).' module(s) scanned'.($blocked ? ', '.$blocked.' would be blocked' : '').': '.implode(', ', $results), $blocked ? 'warning' : 'healthy');
     }
 
     protected function runCheck()

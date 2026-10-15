@@ -33,8 +33,9 @@ class ModulesController extends BaseController
         $jobs = UpdateJob::where('module', $name)->orderBy('id', 'desc')->limit(15)->get();
         $pending = UpdateJob::pendingFor($name);
         $self = $name === ModuleDiscoveryService::SELF;
+        $lastScan = \Modules\UpdateGuard\Entities\SecurityReport::where('module', $name)->orderBy('id', 'desc')->first();
 
-        return view('updateguard::module', compact('module', 'backups', 'jobs', 'pending', 'self'));
+        return view('updateguard::module', compact('module', 'backups', 'jobs', 'pending', 'self', 'lastScan'));
     }
 
     public function check($name)

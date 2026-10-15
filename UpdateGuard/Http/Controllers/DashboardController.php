@@ -50,8 +50,17 @@ class DashboardController extends BaseController
     {
         $this->admin();
         $job = UpdateJob::findOrFail($id);
+        $report = route('updateguard.report', ['updateId' => $job->update_id]);
+        if ($job->type === 'scan') {
+            // a security scan opens its security report (one module) or the reports of this scan (all modules)
+            $reports = \Modules\UpdateGuard\Entities\SecurityReport::where('update_id', $job->update_id)->pluck('id');
+            $report = count($reports) === 1
+                ? route('updateguard.security.show', ['id' => $reports[0]])
+                : route('updateguard.security', ['update_id' => $job->update_id]);
+        }
 
         return response()->json([
+            'type'      => $job->type,
             'id'        => $job->id,
             'update_id' => $job->update_id,
             'module'    => $job->module,
@@ -60,7 +69,7 @@ class DashboardController extends BaseController
             'progress'  => $job->status === 'queued' ? 0 : (isset(UpdateRunner::PROGRESS[$job->status]) ? UpdateRunner::PROGRESS[$job->status] : 100),
             'message'   => (string) $job->message,
             'finished'  => $job->isFinished(),
-            'report'    => route('updateguard.report', ['updateId' => $job->update_id]),
+            'report'    => $report,
             // paused by the Security Gate: the page opens the security summary where the administrator decides
             'decision'  => $job->isWaiting() && $job->security_report_id ? route('updateguard.security.show', ['id' => $job->security_report_id]) : '',
         ]);
