@@ -133,6 +133,10 @@ foreach ($GLOBALS['ug_tests'] as $name => $fn) {
     } catch (Throwable $e) {
         $failed++;
         echo "  FAIL  $name\n        ".$e->getMessage().' ('.basename($e->getFile()).':'.$e->getLine().")\n";
+        if (getenv('GITHUB_ACTIONS')) {
+            // visible in the run summary (annotations)
+            echo '::error title=PHP '.PHP_VERSION.' '.str_replace([',', ':'], ' ', $name).'::'.str_replace(["\r", "\n"], ['', '%0A'], mb_substr($e->getMessage(), 0, 800)).' ('.basename($e->getFile()).':'.$e->getLine().")\n";
+        }
     }
 }
 rmtree(sys_get_temp_dir().'/ug-tests-'.getmypid());

@@ -35,12 +35,21 @@ debug() {
     trap - ERR
     log "Debug: FreeScout setup and Laravel log"
     docker exec "$APP" sh -c 'tail -n 60 /tmp/setup.log 2>/dev/null; tail -n 80 /var/www/html/storage/logs/*.log 2>/dev/null' || true
+    if [ -n "${GITHUB_ACTIONS:-}" ]; then
+        # last lines of the setup and of Laravel's log as an annotation (logs of the run are not public)
+        printf '::error title=integration debug::%s\n' "$(docker exec "$APP" sh -c 'tail -n 15 /tmp/setup.log 2>/dev/null; tail -n 25 /var/www/html/storage/logs/*.log 2>/dev/null' 2>&1 | cut -c1-300 | sed ':a;N;$!ba;s/\n/%0A/g')"
+    fi
 }
 trap debug ERR
 
 FAILED=0
 pass() { printf '  PASS  %s\n' "$*"; }
-fail() { printf '  FAIL  %s\n' "$*"; FAILED=$((FAILED + 1)); }
+fail() {
+    printf '  FAIL  %s\n' "$*"
+    FAILED=$((FAILED + 1))
+    # visible in the run summary (annotations)
+    if [ -n "${GITHUB_ACTIONS:-}" ]; then printf '::error title=integration::%s\n' "$*"; fi
+}
 # expect <description> <condition command...>
 expect() { local d="$1"; shift; if "$@"; then pass "$d"; else fail "$d"; fi; }
 
@@ -101,7 +110,7 @@ php artisan freescout:module-install updateguard >/dev/null 2>&1 || true
 php artisan freescout:module-install ugtestmodule >/dev/null 2>&1 || true
 php artisan migrate --force
 php artisan config:clear
-' || { docker exec "$APP" cat /tmp/setup.log >&2; exit 1; }
+' || { docker exec "$APP" cat /tmp/setup.log >&2; debug; exit 1; }
 
 # no observation period (the update is validated at once), scheduler not needed
 php_app '\App\Option::set("updateguard.observation_minutes", 0);'
