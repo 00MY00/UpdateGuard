@@ -22,6 +22,8 @@ UI (admin) ──POST──▶ updateguard_jobs (queued) ──▶ planificateur
                                                      ▼
                          UpdateRunner ── verrou global ── rapport + journal à chaque étape
    checking → preflight → downloading → verifying (SHA-256) → staging (ZipInspector) → tests génériques
+   → Security Gate (Services/Security : analyse locale, fournisseurs externes, score, politique)
+        bloqué → blocked ; confirmation / accord d'envoi → awaiting_decision (rien n'est modifié)
    → backing_up (BackupService) → installing (swap + freescout:module-install, nouveau processus)
    → clearing_cache → health_check (natif + updateguard:probe, nouveaux processus)
    → observing (LogScanner sur storage/logs) → successful
@@ -54,6 +56,25 @@ Une opération trouvée dans un état intermédiaire après un verrou abandonné
 | `updateguard_logs` | ID, gravité, module, versions, étape, message, contexte |
 
 Rapports : `storage/updateguard/reports/<ID>.json` (format `updateguard-report/1`), exportés en TXT / JSON / HTML.
+
+## Security Gate
+
+| Classe (`Services/Security`) | Rôle |
+|---|---|
+| `SecurityGate` | orchestre : intégrité → structure → `LocalStaticScanner` → fournisseurs externes → `RiskScore` → `SecurityPolicy` ; sorties texte / JSON / code de sortie |
+| `CodeAnalyzer` | analyse heuristique par jetons PHP (jamais d'exécution), scripts shell, binaires, PHP caché |
+| `Rules` | règles : famille, gravité, poids, message ; plafonds par famille |
+| `RiskScore` | score 0-100 (une règle comptée une fois, plafonds) et niveau selon les seuils |
+| `SecurityPolicy` | allowed / blocked / confirm / upload_consent ; passage outre ; jamais d'attente pour une mise à jour automatique |
+| `SecurityScannerProviderInterface`, `ScanResult`, `ConnectionResult` | contrat des fournisseurs, statuts standard |
+| `LocalStaticScanner`, `VirusTotalScanner` | fournisseurs inclus (HTTP injecté : tests sans réseau) |
+| `ScanCache` | cache SHA-256 + fournisseur (résultats définitifs seulement) |
+| `Providers`, `Secrets`, `SecurityReports` | fabrique (filtre `updateguard.security_providers`), clé API chiffrée, rapports et rétention |
+
+Table `updateguard_security_reports` ; colonnes ajoutées à `updateguard_jobs` : `security_decision`,
+`security_sha256` (les décisions d'une page ne valent que pour le paquet vu), `security_report_id`, `source_path`,
+`sums_path` (paquet local). État `awaiting_decision` : opération en pause avant toute modification, reprise (nouveau
+téléchargement, même paquet exigé) après la décision.
 
 ## Sauvegarde / retour arrière
 

@@ -53,7 +53,8 @@ Refresh : menu ☰ de FreeScout › Gérer › UpdateGuard.
 | Modules | version installée / dernière, niveau de sécurité, santé, dernière sauvegarde ; actions Mettre à jour, Vérifier, Contrôle de santé, Sauvegardes, Journal ; fiche détaillée avec **rapport de compatibilité**, retour à la dernière version saine, mises à jour automatiques autorisées ou non |
 | Restaurations | toutes les sauvegardes (module, version, date, taille, santé, raison, version saine) ; Restaurer (page de confirmation « Actuelle / Restaurer »), Télécharger, Voir le rapport, Supprimer |
 | Journaux et rapports | filtres module, date, gravité, état, ID de mise à jour, automatique/manuelle ; rapports TXT, JSON, HTML |
-| Réglages | Mises à jour, Sécurité, Retour arrière, Rétention, Notifications, Avancé |
+| Rapports de sécurité | un rapport par paquet analysé : date, module, version, intégrité, analyse locale, analyse externe, risque, décision, résultat ; rapport complet (constats, JSON) et décisions sur une mise à jour en attente |
+| Réglages | Mises à jour, Sécurité (Security Gate), VirusTotal, Retour arrière, Rétention, Notifications, Avancé |
 
 ### Niveaux de sécurité
 
@@ -69,7 +70,8 @@ La sauvegarde et le retour arrière des fichiers sont faits à **tous** les nive
 ### Déroulement d'une mise à jour
 
 ```text
-Mise à jour détectée → préflight → téléchargement (HTTPS) → SHA-256 → staging → tests génériques → sauvegarde
+Mise à jour détectée → préflight → téléchargement (HTTPS) → SHA-256 → staging → tests génériques
+→ Security Gate (analyse locale, scanners externes, score, politique) → sauvegarde
 → installation → vidage du cache → contrôle de santé → observation → SUCCÈS → version marquée stable
 
 Contrôle de santé en ÉCHEC → retour arrière automatique → version précédente remise → cache reconstruit
@@ -124,7 +126,8 @@ supprimée automatiquement**. Rétention séparée du journal et des rapports.
 |---|---|
 | `updateguard:run` | (planificateur, chaque minute) tâches en file, observations, mises à jour automatiques, verrous abandonnés |
 | `updateguard:check [Module]` | versions distantes, SHA256SUMS, commandes de santé (planifié : chaque heure ou chaque jour) |
-| `updateguard:update Module [--force] [--queue]` | mise à jour sécurisée |
+| `updateguard:update Module [--force] [--queue] [--zip=paquet.zip --sums=SHA256SUMS] [--yes] [--upload\|--skip-upload] [--override]` | mise à jour sécurisée ; `--zip` : paquet local (mise à jour hors ligne) ; décisions de la porte de sécurité données d'avance (sinon question dans un terminal) |
+| `updateguard:scan Module [--zip=…] [--sums=…] [--installed] [--upload] [--json]` | porte de sécurité **sans rien installer** : dernier paquet publié, paquet local, ou fichiers installés ; code de sortie **0** vérification réussie, **1** bloqué / problème critique, **2** erreur de scanner ou de configuration |
 | `updateguard:health [Module] [--all] [--json]` | contrôle de santé d'un module, de tous, ou d'UpdateGuard lui-même |
 | `updateguard:restore Module [backup] [--list]` | restaurer une sauvegarde (par défaut la dernière version saine) |
 | `updateguard:cleanup` | appliquer la rétention (planifié chaque jour) |
@@ -141,6 +144,111 @@ FreeScout continue de fonctionner normalement et son bouton « Mettre à jour »
 modifié). Sur la page Gérer › Modules, une note conseille de faire les mises à jour des modules communautaires avec
 UpdateGuard (désactivable : Réglages › Notifications). Les modules gérés sont signalés « Managed by UpdateGuard » : ne les mettez pas à jour en même temps par un
 autre mécanisme automatique.
+
+## Security Gate (vérification de sécurité avant installation)
+
+Chaque paquet de module est analysé **avant** d'être installé, dans le dossier de staging, après la vérification
+SHA-256 et la validation de l'archive. Les contrôles de santé restent **après** l'installation : ce sont deux
+responsabilités séparées. Tout est réglable dans **Réglages › Sécurité** ; chaque contrôle peut être désactivé, et
+avec l'interrupteur général « Activer la porte de sécurité » coupé, UpdateGuard fonctionne comme avant, sans analyse.
+
+> **À lire.** L'analyse locale ne garantit pas qu'un logiciel est sans malware. Les résultats de VirusTotal peuvent
+> contenir des faux positifs. Envoyer un paquet à un service externe peut avoir des conséquences pour la
+> confidentialité. Une empreinte SHA-256 prouve l'**intégrité** (c'est bien le fichier publié), pas la
+> **fiabilité** de son auteur. L'administrateur reste responsable de la décision d'installer du code tiers.
+
+### Analyse locale (sans service externe)
+
+| Contrôle | Ce qui est recherché |
+|---|---|
+| Empreintes SHA256 | paquet comparé à `SHA256SUMS` : `VERIFIED`, `MISMATCH`, `NOT AVAILABLE`, `DISABLED` |
+| Structure du paquet | Zip Slip (`../`, chemins absolus), liens symboliques, chemins en double ou en conflit (même nom à la casse près), taux de compression anormal (bombe ZIP), archive corrompue ; jamais d'extraction directe dans le module en service |
+| Motifs PHP suspects | `eval`, `assert` avec du code, `exec`, `system`, `shell_exec`, `passthru`, `proc_open`, `popen`, `pcntl_exec`, backticks, `create_function`, `preg_replace /e`, `base64_decode`, `gzinflate`, `gzuncompress`, `str_rot13`… et surtout les combinaisons : `eval(base64_decode(…))`, nom de fonction construit (`'sys'.'tem'`), appel dynamique dans un fichier qui décode des données |
+| Obfuscation | longues chaînes encodées, plusieurs couches de décodage, code en hexadécimal / octal, chaînes à entropie élevée, PHP caché dans une image ou après des données binaires, données après `__halt_compiler()` |
+| Fichiers exécutables | binaires ELF, PE (Windows), Mach-O, `.exe`, `.so`, `.dll`, `.phar`… (reconnus par leur contenu, pas seulement par leur extension) |
+| Écritures hors du module | écriture vers `/etc`, `/usr`, cron, `.env`, configuration du serveur web / PHP, fichiers du cœur de FreeScout (`app/`, `config/`, `routes/`…), un **autre** module, chemins qui remontent avec `../../` ; les écritures normales (`storage_path()`, le propre dossier du module) ne sont pas signalées |
+| Réseau | `curl_exec`, `fsockopen`, `stream_socket_client`, `file_get_contents('http…')`, Guzzle : une requête seule n'est pas suspecte ; elle le devient si du code téléchargé est exécuté, si le fichier lit des secrets (`.env`, `APP_KEY`, mot de passe de la base) ou pour un domaine inhabituel |
+| Scripts d'installation | `curl … \| sh`, `crontab`, `/etc/…`, `chmod 777`, `authorized_keys`, `rm -rf /`… dans les scripts shell ; commandes ou requêtes réseau dans les migrations et les fichiers `install*.php` / `update*.php` ; scripts de `composer.json` |
+
+L'analyse PHP lit les **jetons** du code (`token_get_all`) sans jamais l'exécuter : un nom de fonction dans un
+commentaire, un docblock ou une traduction n'est pas un appel, et `$this->exec()` n'est pas `exec()`.
+
+### Score de risque
+
+Chaque constat a une gravité (LOW, MEDIUM, HIGH, CRITICAL) et un poids. Une règle compte **une seule fois** quel que
+soit le nombre d'occurrences, et chaque famille de contrôles a un plafond : un gros module avec beaucoup de
+`base64_decode()` ordinaires n'atteint pas un score élevé. Seules les combinaisons dangereuses montent haut.
+
+| Exemple | Poids |
+|---|---|
+| SHA-256 différent, traversée de chemin dans l'archive | +100 |
+| Code distant téléchargé puis exécuté | +80 |
+| Écriture dans un dossier système | +70 |
+| Écriture dans le cœur de FreeScout | +60 |
+| `eval()` de contenu décodé | +60 |
+| Code obfusqué (plafond de la famille) | +30 à +50 |
+| `shell_exec()` | +20 |
+| `base64_decode()`, requête HTTP externe | +5 |
+
+Score de 0 à 100 : **0–20 LOW, 21–49 MEDIUM, 50–79 HIGH, 80–100 CRITICAL** (seuils réglables).
+
+### Politique de sécurité
+
+Bloquer la mise à jour si (chaque règle est réglable) : empreinte différente ✓, traversée de chemin dans l'archive ✓,
+résultat critique de l'analyse locale ✓, score ≥ 80 ✓, un scanner externe donne un résultat bloquant ✓, un scanner
+externe est indisponible ☐.
+
+- **Résumé avant installation** (mises à jour manuelles, réglable : jamais / seulement en cas d'avertissement /
+  toujours) : la mise à jour se met **en pause sans rien modifier** et la page « Rapports de sécurité » affiche le
+  résumé avec **Continuer la mise à jour** / **Annuler**. Les mises à jour automatiques ne s'arrêtent jamais : elles
+  passent ou sont bloquées.
+- **Passer outre un blocage** (réglage « Permettre aux administrateurs de passer outre », activé par défaut) : case
+  « J'ai lu les constats et j'accepte le risque » + confirmation, **« Installer quand même »**. L'action est
+  enregistrée en CRITICAL dans le journal et dans le rapport de sécurité, et ne vaut que pour le paquet analysé (même
+  SHA-256). **Jamais** possible pour une empreinte différente (ce n'est pas le fichier publié) ni pour une archive
+  dangereuse (elle ne peut pas être extraite sans risque) : ces deux règles ne peuvent qu'être désactivées dans les
+  réglages.
+
+### VirusTotal (facultatif, désactivé par défaut)
+
+Réglages › VirusTotal : clé API (enregistrée **chiffrée** avec la clé de l'application FreeScout, jamais réaffichée
+en entier), « Tester la connexion », chercher d'abord l'empreinte, envoi automatique des fichiers inconnus (désactivé),
+demander avant d'envoyer (activé), seuils de détection, comportement en cas d'échec (continuer avec avertissement /
+bloquer).
+
+**Confidentialité** : par défaut seul le **SHA-256** du paquet est envoyé. Si VirusTotal ne connaît pas le fichier,
+UpdateGuard **demande** avant de l'envoyer : « Ce fichier n'est pas encore connu… Envoyer le module peut partager le
+paquet avec VirusTotal et ses partenaires de sécurité » — **Annuler**, **Continuer sans envoyer**, **Envoyer et
+analyser**. Rien n'est envoyé silencieusement ; l'envoi automatique n'a lieu que si vous l'activez. Ne l'activez pas
+pour des modules privés ou sous licence.
+
+Résultat normalisé (malveillant, suspect, inoffensif, non détecté). Par défaut : 0 détection PASS, 1–2 WARNING,
+3–5 HIGH, 6 et plus CRITICAL ; blocage à partir de 3 détections malveillantes (une seule détection ne bloque pas).
+Les résultats sont mis en cache par **SHA-256 + fournisseur** (7 jours par défaut) : un paquet identique n'est pas
+réanalysé. Une panne du scanner (délai, quota, clé invalide) ne fait jamais planter UpdateGuard : statut `ERROR`, et
+la politique décide.
+
+### Architecture des fournisseurs
+
+Les scanners implémentent `Modules\UpdateGuard\Services\Security\SecurityScannerProviderInterface`
+(`getName`, `isConfigured`, `lookupHash`, `scanFile`, `supportsUpload`, `testConnection`) et renvoient un
+`ScanResult` standard : `PASS`, `WARNING`, `BLOCKED`, `ERROR`, `DISABLED`, `NOT_AVAILABLE`. Fournisseurs inclus :
+`LocalStaticScanner` et `VirusTotalScanner`. Un autre module peut en ajouter (MetaDefender, ClamAV, scanner REST
+maison…) sans toucher à UpdateGuard :
+
+```php
+\Eventy::addFilter('updateguard.security_providers', function ($providers, $settings) {
+    $providers[] = new \Modules\MyModule\Security\ClamAvScanner();
+    return $providers;
+}, 20, 2);
+```
+
+### Rapports de sécurité
+
+Un rapport par paquet analysé (mise à jour ou commande `updateguard:scan`) : module, versions actuelle et cible,
+source, SHA-256 du paquet, scanners activés, constats (fichier et ligne), score, décision, passage outre éventuel,
+puis résultat de la mise à jour, du contrôle de santé et du retour arrière. Rétention : 90 jours et 500 rapports par
+défaut, bouton « Appliquer la rétention maintenant » et nettoyage quotidien (`updateguard:cleanup`).
 
 ## For module developers
 
@@ -222,8 +330,10 @@ Actions: `updateguard.before_update`, `updateguard.after_update`, `updateguard.u
 ## Développement
 
 ```bash
-php tests/unit/run.php                       # tests unitaires purs PHP (archives malveillantes, SHA-256, verrou, 7 langues…)
+php tests/unit/run.php                       # tests unitaires purs PHP (archives malveillantes, SHA-256, verrou, porte de sécurité, VirusTotal simulé, 7 langues…)
 php tests/blade/compile.php <autoload.php>   # compilation des vues Blade (illuminate/view)
+bash tests/integration/run.sh                # FreeScout réel dans Docker : porte de sécurité, retour arrière après
+                                             # un contrôle de santé raté, paquet bloqué, Zip Slip, JSON, pages
 bash tools/build-release.sh                  # dist/UpdateGuard.zip, version.txt, module.json, install.sh, SHA256SUMS
 ```
 

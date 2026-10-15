@@ -3,6 +3,37 @@
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions [SemVer](https://semver.org/lang/fr/).
 La version du module est celle de `UpdateGuard/module.json`.
 
+## [1.4.0] - 2026-10-15
+
+### Ajouté
+- **Security Gate** : vérification de sécurité de chaque paquet de module **avant** son installation, dans le
+  staging (les contrôles de santé restent après l'installation). Interrupteur général et un interrupteur par contrôle
+  dans Réglages › Sécurité ; désactivé, UpdateGuard fonctionne comme avant.
+- **Analyse locale sans service externe** : empreintes SHA-256 (`VERIFIED` / `MISMATCH` / `NOT AVAILABLE` /
+  `DISABLED`), structure du paquet (Zip Slip, liens, **chemins en double ou en conflit**, **bombe ZIP**), motifs PHP
+  dangereux et leurs combinaisons (`eval(base64_decode(…))`, nom de fonction construit…), obfuscation (chaînes
+  encodées, couches de décodage, entropie, PHP caché dans une image), binaires exécutables, écritures hors du module
+  (`/etc`, cron, `.env`, cœur de FreeScout, autre module, serveur web), comportement réseau (code distant exécuté,
+  lecture de secrets), scripts d'installation (`curl | sh`, crontab…). Analyse par jetons PHP, sans jamais exécuter
+  le code.
+- **Score de risque** 0-100 (LOW / MEDIUM / HIGH / CRITICAL, seuils réglables), une règle comptée une fois et un
+  plafond par famille pour limiter les faux positifs.
+- **Politique de sécurité réglable** (empreinte différente, archive dangereuse, résultat critique, score ≥ seuil,
+  scanner externe bloquant ou indisponible) ; **résumé avant installation** avec « Continuer la mise à jour » /
+  « Annuler » pour les mises à jour manuelles ; **passage outre** par un administrateur (case + confirmation,
+  journalisé en CRITICAL, jamais pour une empreinte différente ni une archive dangereuse).
+- **VirusTotal facultatif** (désactivé par défaut) : clé API chiffrée, test de connexion, recherche par empreinte
+  d'abord, **jamais d'envoi silencieux** (accord demandé pour un fichier inconnu, envoi automatique seulement s'il est
+  activé), seuils de détection, comportement en cas d'échec, cache par SHA-256 + fournisseur.
+- **Architecture de fournisseurs** (`SecurityScannerProviderInterface`, statuts standard) ; d'autres scanners peuvent
+  être ajoutés par le filtre `updateguard.security_providers`.
+- Page **Rapports de sécurité** (liste, rapport complet, décisions) et rétention (jours + nombre maximum).
+- Commande **`updateguard:scan`** (`--json`, `--zip`, `--installed`, codes de sortie 0 / 1 / 2) ; `updateguard:update`
+  accepte un **paquet local** (`--zip`, `--sums`, mise à jour hors ligne) et les décisions `--yes`, `--upload`,
+  `--skip-upload`, `--override`.
+- **Tests d'intégration dans un vrai FreeScout** (Docker, en CI) : retour arrière après un contrôle de santé raté,
+  paquet malveillant bloqué, Zip Slip refusé, mise à jour saine, sortie JSON, rapports de sécurité, pages.
+
 ## [1.3.0] - 2026-10-14
 
 ### Ajouté
