@@ -47,7 +47,13 @@ class CleanupService
     public static function run()
     {
         Paths::ensure();
-        $out = ['backups' => self::retention(), 'logs' => 0, 'reports' => 0, 'staging' => 0];
+        $out = ['backups' => self::retention(), 'logs' => 0, 'reports' => 0, 'staging' => 0, 'security' => 0];
+        // Security Gate reports (days + maximum count) and expired external scan results
+        try {
+            $out['security'] = Security\SecurityReports::prune(Settings::get('sec_report_retention_days'), Settings::get('sec_report_max'));
+            Security\Providers::cache(Settings::all())->prune();
+        } catch (\Throwable $e) {
+        }
         $logDays = (int) Settings::get('log_retention_days');
         if ($logDays > 0) {
             $out['logs'] = UpdateLog::where('created_at', '<', now()->subDays($logDays))->delete();

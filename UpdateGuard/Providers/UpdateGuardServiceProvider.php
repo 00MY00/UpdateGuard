@@ -38,6 +38,7 @@ class UpdateGuardServiceProvider extends ServiceProvider
             \Modules\UpdateGuard\Console\RestoreModuleCommand::class,
             \Modules\UpdateGuard\Console\CleanupBackupsCommand::class,
             \Modules\UpdateGuard\Console\ProbeCommand::class,
+            \Modules\UpdateGuard\Console\ScanCommand::class,
         ]);
     }
 

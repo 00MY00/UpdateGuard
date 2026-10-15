@@ -34,6 +34,13 @@ Route::group([
     Route::get('/reports/{updateId}/download/{format}', $admins + ['uses' => 'LogsController@download'])->where(['updateId' => 'UG-[0-9]{8}-[0-9]+', 'format' => 'txt|json|html'])->name('updateguard.report.download');
     Route::post('/reports/{updateId}/delete', $admins + ['uses' => 'LogsController@delete'])->where('updateId', 'UG-[0-9]{8}-[0-9]+')->name('updateguard.report.delete');
 
+    // Security Gate: reports, decisions on a paused update, clean-up, VirusTotal connection test
+    Route::get('/security', $admins + ['uses' => 'SecurityController@index'])->name('updateguard.security');
+    Route::post('/security/cleanup', $admins + ['uses' => 'SecurityController@cleanup'])->name('updateguard.security.cleanup');
+    Route::get('/security/{id}', $admins + ['uses' => 'SecurityController@show'])->where('id', '[0-9]+')->name('updateguard.security.show');
+    Route::post('/security/{id}/decide', $admins + ['uses' => 'SecurityController@decide'])->where('id', '[0-9]+')->name('updateguard.security.decide');
+    Route::post('/settings/virustotal/test', $admins + ['uses' => 'SecurityController@testVirusTotal'])->name('updateguard.security.test_vt');
+
     Route::get('/settings', $admins + ['uses' => 'SettingsController@index'])->name('updateguard.settings');
     Route::post('/settings', $admins + ['uses' => 'SettingsController@save'])->name('updateguard.settings.save');
 });

@@ -19,6 +19,7 @@
             <li class="{{ Route::is('updateguard.module*') ? 'active' : '' }}"><a href="{{ route('updateguard.modules') }}">{{ __('updateguard::ug.modules') }}</a></li>
             <li class="{{ Route::is('updateguard.restor*') ? 'active' : '' }}"><a href="{{ route('updateguard.restorations') }}">{{ __('updateguard::ug.restorations') }}</a></li>
             <li class="{{ Route::is('updateguard.logs') || Route::is('updateguard.report*') ? 'active' : '' }}"><a href="{{ route('updateguard.logs') }}">{{ __('updateguard::ug.logs_reports') }}</a></li>
+            <li class="{{ Route::is('updateguard.security*') ? 'active' : '' }}"><a href="{{ route('updateguard.security') }}">{{ __('updateguard::ug.security_reports') }}</a></li>
             <li class="{{ Route::is('updateguard.settings*') ? 'active' : '' }}"><a href="{{ route('updateguard.settings') }}">{{ __('updateguard::ug.settings') }}</a></li>
         </ul>
     </div>
@@ -30,7 +31,7 @@
     @endif
     @include('updateguard::partials.republished')
     @if (session('ug_job'))
-        @include('updateguard::partials.progress', ['jobId' => session('ug_job')])
+        @include('updateguard::partials.progress', ['jobId' => session('ug_job'), 'follow' => true])
     @endif
     @yield('ug_content')
 </div>

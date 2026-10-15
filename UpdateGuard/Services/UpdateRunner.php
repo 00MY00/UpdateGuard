@@ -25,6 +25,7 @@ class UpdateRunner
     const PROGRESS = [
         'queued' => 0, 'checking' => 5, 'downloading' => 15, 'verifying' => 25, 'staging' => 35, 'backing_up' => 45,
         'installing' => 60, 'clearing_cache' => 70, 'health_check' => 80, 'rolling_back' => 85, 'observing' => 90,
+        'awaiting_decision' => 50,
     ];
 
     /** @var callable|null */
@@ -230,6 +231,18 @@ class UpdateRunner
             $this->report['errors'][] = $message;
         }
         $this->saveReport();
+        if ($this->job->security_report_id) {
+            // the security report also records what happened after the gate
+            try {
+                Security\SecurityReports::complete(
+                    $this->job->security_report_id,
+                    $status,
+                    (string) ($this->report['steps']['native_health']['result'] ?? $this->report['steps']['generic_validation']['result'] ?? ''),
+                    (string) ($this->report['steps']['rollback']['result'] ?? '')
+                );
+            } catch (\Throwable $e) {
+            }
+        }
     }
 
     protected function saveReport()
@@ -269,6 +282,24 @@ class UpdateRunner
         $module = ModuleDiscoveryService::find($job->module);
         if (!$module) {
             return $this->finish('failed', 'module not installed: '.$job->module);
+        }
+        // offline update: a local ZIP (updateguard:update --zip=...), manual only, version read from the archive
+        $localSource = (string) $job->source_path !== '';
+        if ($localSource) {
+            if ($job->automatic) {
+                return $this->finish('blocked', 'a local archive is never installed automatically');
+            }
+            ModuleDiscoveryService::sync();
+            $row = ModuleHealth::named($module['name']);
+            $caps = $row->capabilities();
+            $from = $module['version'];
+            $job->from_version = $from;
+            $job->save();
+            $this->report['from'] = $from;
+            $j->from = $from;
+            $j->info('checking', 'Update from the local archive '.basename($job->source_path));
+
+            return $this->updateFromPackage($module, $row, $caps, $from, '');
         }
         $row = ModuleDiscoveryService::check($module);
         $caps = $row->capabilities();
@@ -313,6 +344,20 @@ class UpdateRunner
             return $this->finish('blocked', 'safety level '.$row->safety_level.' does not allow automatic updates');
         }
 
+        return $this->updateFromPackage($module, $row, $caps, $from, $to);
+    }
+
+    /**
+     * preflight → package (download or local archive) → SHA-256 → staging → generic tests → Security Gate → backup →
+     * install → health check → observation. $to is '' for a local archive (read from its module.json).
+     */
+    protected function updateFromPackage(array $module, $row, array $caps, $from, $to)
+    {
+        $job = $this->job;
+        $j = $this->journal;
+        $localSource = (string) $job->source_path !== '';
+        $gate = (bool) Settings::get('security_gate');
+
         // ------------------------------------------------------------------------------------------- preflight
         $problems = $this->preflight($module);
         if ($problems) {
@@ -331,32 +376,59 @@ class UpdateRunner
         @mkdir($work, 0775, true);
         $zip = $work.'/archive.zip';
         $download = new DownloadService();
-        $size = $download->file($caps['zip_url'], $zip);
+        $source = $localSource ? $job->source_path : (string) ($caps['zip_url'] ?? '');
+        if ($localSource) {
+            if (!is_file($job->source_path) || !is_readable($job->source_path) || !@copy($job->source_path, $zip)) {
+                $this->cleanWork();
+
+                return $this->finish('failed', 'ABORT: local archive not readable: '.$job->source_path);
+            }
+            $size = (int) filesize($zip);
+        } else {
+            $size = $download->file($caps['zip_url'], $zip);
+        }
         ReportService::step($this->report, 'download', 'PASS', round($size / 1024).' KB');
-        $j->info('download', 'Archive downloaded ('.round($size / 1024).' KB)');
+        $j->info('download', ($localSource ? 'Local archive copied' : 'Archive downloaded').' ('.round($size / 1024).' KB)');
 
         $this->status('verifying');
         $actual = ChecksumService::hashFile($zip);
         $this->zipHash = $actual;
         $expected = '';
-        if (!empty($caps['sums_url'])) {
+        if ($localSource) {
+            if ((string) $job->sums_path !== '') {
+                $expected = ChecksumService::expectedFor((string) @file_get_contents($job->sums_path), basename($job->source_path));
+                if ($expected === '') {
+                    $expected = ChecksumService::expectedFor((string) @file_get_contents($job->sums_path), $module['name'].'.zip');
+                }
+            }
+        } elseif (!empty($caps['sums_url'])) {
             try {
                 $expected = ChecksumService::expectedFor($download->text($caps['sums_url']), DownloadService::zipName($module['manifest']));
             } catch (\Throwable $e) {
                 $j->warning('verifying', 'SHA256SUMS not readable: '.$e->getMessage());
             }
         }
-        if ($expected !== '') {
-            if (!ChecksumService::matches($expected, $actual)) {
-                ReportService::step($this->report, 'checksum', 'FAIL', 'expected '.$expected.', got '.$actual);
-                $j->error('verifying', 'SHA-256 mismatch: ABORT, nothing was changed');
+        // integrity state for the Security Gate: VERIFIED / MISMATCH / NOT AVAILABLE / DISABLED
+        $integrity = $expected === '' ? 'NOT AVAILABLE' : (ChecksumService::matches($expected, $actual) ? 'VERIFIED' : 'MISMATCH');
+        if ($gate && !Settings::get('sec_check_integrity')) {
+            $integrity = 'DISABLED';
+        }
+        if ($integrity === 'MISMATCH') {
+            ReportService::step($this->report, 'checksum', 'FAIL', 'expected '.$expected.', got '.$actual);
+            $j->error('verifying', 'SHA-256 mismatch: expected '.$expected.', got '.$actual);
+            if (!$gate) {
                 $this->cleanWork();
 
                 return $this->finish('failed', 'ABORT: SHA-256 mismatch');
             }
+            // with the Security Gate, the policy decides (blocked by default, not overridable)
+        } elseif ($integrity === 'DISABLED') {
+            ReportService::step($this->report, 'checksum', 'SKIPPED', 'disabled in the Security Gate settings; sha256 '.$actual);
+            $j->warning('verifying', 'SHA-256 verification disabled in the settings');
+        } elseif ($integrity === 'VERIFIED') {
             ReportService::step($this->report, 'checksum', 'PASS', $actual);
             $j->info('verifying', 'SHA-256 verified');
-        } elseif (!empty($caps['sha256']) && Settings::get('require_sha256')) {
+        } elseif (!$localSource && !empty($caps['sha256']) && Settings::get('require_sha256')) {
             // the module publishes checksums but the file could not be read now: never install unverified
             ReportService::step($this->report, 'checksum', 'FAIL', 'SHA256SUMS announced but unavailable');
             $this->cleanWork();
@@ -378,6 +450,10 @@ class UpdateRunner
         if (!$inspection['ok']) {
             ReportService::step($this->report, 'staging', 'FAIL', implode('; ', $inspection['errors']));
             $j->error('staging', 'Archive refused: '.implode('; ', $inspection['errors']));
+            if ($gate) {
+                // security report of the refused package (never extracted)
+                $this->securityGate($module, $from, $to ?: '?', $source, $zip, '', $actual, $integrity, $inspection['errors']);
+            }
             $this->cleanWork();
 
             return $this->finish('failed', 'ABORT: archive refused ('.implode('; ', array_slice($inspection['errors'], 0, 3)).')');
@@ -445,9 +521,42 @@ class UpdateRunner
             ReportService::step($this->report, 'generic_tests', 'SKIPPED');
         }
 
+        // ----------------------------------------------------------------------------------------- Security Gate
+        // before anything is changed: SHA-256, archive, static analysis, external scanners, score, policy
+        if ($gate) {
+            $sec = $this->securityGate($module, $from, $to, $source, $zip, $staged, $actual, $integrity, []);
+            if ($sec['decision'] === 'blocked') {
+                $this->cleanWork();
+
+                return $this->finish('blocked', 'blocked by the security policy (risk '.$sec['score'].'/100 '.$sec['level'].': '.implode(', ', $sec['reasons']).')', 'blocked');
+            }
+            if ($sec['decision'] === 'confirm' || $sec['decision'] === 'upload_consent') {
+                // waits for the administrator (Security Reports page or updateguard:update options); nothing changed
+                $this->cleanWork();
+                $job->security_sha256 = $actual;
+                $job->save();
+                $this->status('awaiting_decision', $sec['decision'] === 'upload_consent'
+                    ? 'package unknown to an external scanner: upload or continue without it'
+                    : 'security summary: confirmation required (risk '.$sec['score'].'/100 '.$sec['level'].')');
+                $j->warning('security', $sec['decision'] === 'upload_consent'
+                    ? 'Waiting for the administrator: upload the package to an external scanner or not'
+                    : 'Waiting for the administrator to confirm the update after the security summary');
+
+                return;
+            }
+            if ($integrity === 'MISMATCH') {
+                $j->critical('security', 'SHA-256 mismatch accepted because the blocking rule is disabled in the settings');
+            }
+        } else {
+            ReportService::step($this->report, 'security', 'DISABLED');
+            if ($integrity === 'NOT AVAILABLE' && $localSource) {
+                $j->warning('verifying', 'Local archive without SHA256SUMS: integrity not verified');
+            }
+        }
+
         // ------------------------------------------------------------------------------------------------ backup
         $this->status('backing_up');
-        $backup = BackupService::create($module['name'], 'before_update', $job->update_id, $caps['zip_url']);
+        $backup = BackupService::create($module['name'], 'before_update', $job->update_id, $source);
         $job->backup_id = $backup->id;
         $job->save();
         ReportService::step($this->report, 'backup', 'PASS', $backup->path);
@@ -492,6 +601,66 @@ class UpdateRunner
         }
         ReportService::step($this->report, 'observation', 'SKIPPED');
         $this->success();
+    }
+
+    /**
+     * Runs the Security Gate on the package, saves its report, records it in the update report and the log.
+     * Decisions of the administrator apply only to the package they saw (same SHA-256).
+     */
+    protected function securityGate(array $module, $from, $to, $source, $zip, $staged, $sha256, $integrity, array $structureErrors)
+    {
+        $job = $this->job;
+        $j = $this->journal;
+        $s = Settings::all();
+        // decisions of the web page apply to the package the administrator saw (same SHA-256); decisions given in
+        // advance on the command line (no SHA-256 recorded) apply to the package of this run
+        $decisions = in_array((string) $job->security_sha256, ['', $sha256], true) ? $job->decisions() : [];
+        $sec = Security\SecurityGate::run([
+            'module'           => $module['name'],
+            'from'             => $from,
+            'to'               => $to,
+            'source'           => $source,
+            'zip'              => $zip,
+            'staged'           => $staged,
+            'sha256'           => $sha256,
+            'integrity'        => $integrity,
+            'structure_errors' => $structureErrors,
+        ], $s, Security\Providers::external($s), Security\Providers::cache($s), $decisions, (bool) $job->automatic);
+        $sec['update_id'] = $job->update_id;
+        $sec['override_by'] = $sec['overridden'] ? (string) $job->triggered_by : '';
+        if ($sec['overridden']) {
+            $j->critical('security', 'OVERRIDE: update classified '.$sec['level'].' ('.$sec['score'].'/100: '.implode(', ', $sec['reasons']).') installed anyway on the decision of '.$job->triggered_by);
+        }
+        foreach ($sec['external'] as $name => $e) {
+            if ($e['status'] === Security\ScanResult::ERROR) {
+                $j->warning('security', $name.' unavailable: '.$e['message']);
+            }
+        }
+        $label = ['allowed' => 'PASS', 'blocked' => 'BLOCKED', 'confirm' => 'WAITING', 'upload_consent' => 'WAITING'];
+        ReportService::step($this->report, 'security', ($sec['overridden'] ? 'OVERRIDDEN' : $label[$sec['decision']]),
+            'risk '.$sec['score'].'/100 '.$sec['level'].($sec['reasons'] ? ', '.implode(', ', $sec['reasons']) : ''));
+        $this->report['security'] = [
+            'score' => $sec['score'], 'level' => $sec['level'], 'decision' => $sec['decision'], 'overridden' => $sec['overridden'],
+            'checks' => array_map(function ($c) {
+                return $c['status'];
+            }, $sec['checks']),
+            'external' => array_map(function ($e) {
+                return $e['status'];
+            }, $sec['external']),
+        ];
+        $level = $sec['decision'] === 'blocked' ? 'error' : (Security\Rules::ORDER[$sec['level']] >= Security\Rules::ORDER['MEDIUM'] ? 'warning' : 'info');
+        $j->{$level}('security', 'Security Gate: risk '.$sec['score'].'/100 '.$sec['level'].', decision '.$sec['decision'].($sec['reasons'] ? ' ('.implode(', ', $sec['reasons']).')' : ''));
+        if (Settings::get('sec_save_reports')) {
+            try {
+                $row = Security\SecurityReports::save($sec, $job->update_id, $job->security_report_id);
+                $job->security_report_id = $row->id;
+                $job->save();
+            } catch (\Throwable $e) {
+                $j->warning('security', 'Security report not saved: '.$e->getMessage());
+            }
+        }
+
+        return $sec;
     }
 
     /** @return string[] problems that stop the update before any change */

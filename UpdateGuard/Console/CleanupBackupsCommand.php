@@ -14,7 +14,7 @@ class CleanupBackupsCommand extends Command
     public function handle()
     {
         $r = CleanupService::run();
-        $this->line('Deleted: '.$r['backups'].' backup(s), '.$r['logs'].' log line(s), '.$r['reports'].' report(s), '.$r['staging'].' staging folder(s).');
+        $this->line('Deleted: '.$r['backups'].' backup(s), '.$r['logs'].' log line(s), '.$r['reports'].' report(s), '.$r['staging'].' staging folder(s), '.$r['security'].' security report(s).');
 
         return 0;
     }

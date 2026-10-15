@@ -51,6 +51,15 @@
             if (job.message) {
                 $box.find('.ug-progress-message').text(job.message);
             }
+            if (job.decision) {
+                // paused by the Security Gate: the administrator decides on the security summary
+                var $link = $box.find('.ug-progress-report');
+                $link.attr('href', job.decision).text($box.attr('data-ug-decision-label') || job.label).removeClass('hidden').addClass('btn btn-warning btn-sm');
+                if ($box.attr('data-ug-follow') === '1') {
+                    window.location.href = job.decision;
+                }
+                return;
+            }
             var width = Math.max(2, job.progress) + '%';
             $box.find('.progress-bar').css('width', width).attr('aria-valuenow', job.progress);
             if (job.finished) {

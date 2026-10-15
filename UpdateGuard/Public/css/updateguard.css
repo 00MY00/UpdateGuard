@@ -72,6 +72,14 @@
 .ug-switch input:focus-visible + .ug-slider { outline: 2px solid #3b7dd8; outline-offset: 2px; }
 .ug-switch input:disabled + .ug-slider { opacity: .55; }
 .ug-switch input:disabled ~ .ug-switch-label { color: #777; }
+/* Security Gate */
+.ug-settings h4 { margin-top: 18px; }
+.ug-settings h5 { margin: 14px 0 6px; font-weight: 600; }
+.ug-hash { word-break: break-all; font-size: 11px; }
+.ug-break { word-break: break-all; }
+.ug-vt-stats { font-size: 12px; margin-top: 3px; }
+.ug-override .ug-confirm-buttons { margin-top: 10px; }
+.ug-override-form { margin-top: 10px; }
 .ug-republished-actions { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 
 /* phones: tables become cards, no horizontal scroll */

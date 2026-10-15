@@ -22,7 +22,42 @@ class Ui
         'rollback_failed'    => ['×', 'state_rollback_failed', 'fail'],
         'observing'          => ['●', 'state_observing', 'info'],
         'queued'             => ['●', 'state_queued', 'info'],
+        'awaiting_decision'  => ['!', 'state_awaiting', 'warn'],
+        'cancelled'          => ['×', 'state_cancelled', 'muted'],
     ];
+
+    /** Security statuses: [symbol, css modifier] (text = the status itself, translated) */
+    const SEC = [
+        'VERIFIED'      => ['✓', 'ok'],
+        'PASS'          => ['✓', 'ok'],
+        'WARNING'       => ['!', 'warn'],
+        'FAIL'          => ['×', 'fail'],
+        'MISMATCH'      => ['×', 'fail'],
+        'BLOCKED'       => ['×', 'fail'],
+        'ERROR'         => ['!', 'warn'],
+        'NOT AVAILABLE' => ['–', 'muted'],
+        'NOT_AVAILABLE' => ['–', 'muted'],
+        'DISABLED'      => ['–', 'muted'],
+    ];
+
+    public static function secStatus($status)
+    {
+        $status = (string) $status;
+        $s = isset(self::SEC[$status]) ? self::SEC[$status] : ['●', 'info'];
+        $key = 'sec_status_'.strtolower(str_replace([' ', '_'], '', $status));
+        $label = \Illuminate\Support\Facades\Lang::has('updateguard::ug.'.$key) ? __('updateguard::ug.'.$key) : $status;
+
+        return '<span class="ug-badge ug-'.$s[1].'">'.e($s[0].' '.$label).'</span>';
+    }
+
+    public static function risk($score, $level)
+    {
+        $css = ['LOW' => 'ok', 'MEDIUM' => 'warn', 'HIGH' => 'fail', 'CRITICAL' => 'fail'];
+        $symbol = ['LOW' => '✓', 'MEDIUM' => '!', 'HIGH' => '×', 'CRITICAL' => '×'];
+        $level = isset($css[$level]) ? $level : 'LOW';
+
+        return '<span class="ug-badge ug-'.$css[$level].'">'.e($symbol[$level].' '.(int) $score.' / 100 · '.__('updateguard::ug.sec_level_'.strtolower($level))).'</span>';
+    }
 
     const LEVELS = [
         SafetyLevel::FULL            => ['✓', 'level_full', 'ok'],

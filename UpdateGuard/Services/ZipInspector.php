@@ -18,6 +18,9 @@ class ZipInspector
 {
     const MAX_ENTRIES = 20000;
     const MAX_UNCOMPRESSED = 524288000; // 500 MB
+    // zip bomb: more than 100 times bigger once extracted, and more than 20 MB
+    const MAX_RATIO = 100;
+    const RATIO_MIN_SIZE = 20971520;
 
     /**
      * @return array ['ok' => bool, 'errors' => string[], 'root' => 'Top/' or 'Top/Sub/', 'entries' => int]
@@ -43,11 +46,14 @@ class ZipInspector
         }
         $tops = [];
         $names = [];
+        $seen = [];
         $size = 0;
+        $compressed = 0;
         for ($i = 0; $i < $zip->numFiles; $i++) {
             $stat = $zip->statIndex($i);
             $name = $stat ? (string) $stat['name'] : '';
             $size += $stat ? (int) $stat['size'] : 0;
+            $compressed += $stat ? (int) $stat['comp_size'] : 0;
             $error = self::badName($name);
             if ($error !== '') {
                 $result['errors'][] = $error.': '.self::printable($name);
@@ -58,6 +64,13 @@ class ZipInspector
                 continue;
             }
             $name = str_replace('\\', '/', $name);
+            // the same path twice, or two paths that collide on a case-insensitive file system
+            $key = strtolower(rtrim($name, '/'));
+            if (isset($seen[$key])) {
+                $result['errors'][] = 'duplicate or conflicting path: '.self::printable($name);
+                continue;
+            }
+            $seen[$key] = true;
             $names[] = $name;
             $parts = explode('/', $name);
             if (count($parts) === 1) {
@@ -69,6 +82,8 @@ class ZipInspector
         }
         if ($size > self::MAX_UNCOMPRESSED) {
             $result['errors'][] = 'archive too large once extracted ('.round($size / 1048576).' MB)';
+        } elseif ($size > self::RATIO_MIN_SIZE && $compressed > 0 && $size / $compressed > self::MAX_RATIO) {
+            $result['errors'][] = 'suspicious compression ratio (zip bomb?): '.round($size / 1048576).' MB from '.round($compressed / 1024).' KB';
         }
         $zip->close();
         if (count($tops) !== 1) {

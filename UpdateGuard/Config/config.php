@@ -39,6 +39,45 @@ return [
         'notify_log'            => true,         // copy of WARNING+ lines in FreeScout's log
         'modules_page_hint'     => true,         // note on FreeScout's Manage › Modules page recommending UpdateGuard
 
+        // Security Gate (before installation) — see Services/Security
+        'security_gate'                  => true,
+        'sec_check_integrity'            => true,   // SHA-256 against SHA256SUMS
+        'sec_check_structure'            => true,   // Zip Slip, links, duplicates, zip bomb
+        'sec_check_php'                  => true,   // dangerous PHP functions and combinations
+        'sec_check_obfuscation'          => true,
+        'sec_check_executables'          => true,
+        'sec_check_filesystem'           => true,   // writes outside the module directory
+        'sec_check_network'              => true,
+        'sec_check_installer'            => true,   // installer / update / migration scripts
+        'sec_block_checksum'             => true,
+        'sec_block_traversal'            => true,
+        'sec_block_critical_local'       => true,
+        'sec_block_score'                => true,
+        'sec_score_threshold'            => 80,
+        'sec_block_external'             => true,   // an external scanner reports a blocking result
+        'sec_block_external_unavailable' => false,
+        'sec_allow_override'             => true,
+        'sec_save_reports'               => true,
+        'sec_confirm'                    => 'warnings', // never | warnings | always (manual updates)
+        'sec_level_medium'               => 21,
+        'sec_level_high'                 => 50,
+        'sec_level_critical'             => 80,
+        'sec_cache_days'                 => 7,
+        'sec_report_retention_days'      => 90,
+        'sec_report_max'                 => 500,
+
+        // VirusTotal (optional, off by default; the API key is stored encrypted, see Services/Security/Secrets)
+        'vt_enabled'                     => false,
+        'vt_hash_first'                  => true,
+        'vt_auto_upload'                 => false,
+        'vt_ask_upload'                  => true,
+        'vt_block_threshold'             => 3,
+        'vt_warning_min'                 => 1,
+        'vt_high_min'                    => 3,
+        'vt_critical_min'                => 6,
+        'vt_on_failure'                  => 'warn', // warn | block
+        'vt_timeout'                     => 30,
+
         // Advanced
         'lock_timeout_minutes'  => 60,           // a lock older than this (or whose process is gone) is abandoned
         'process_timeout'       => 300,          // seconds per artisan sub-process (install, health check)

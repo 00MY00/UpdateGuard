@@ -15,6 +15,7 @@ class ReportService
         'checksum'           => 'Checksum',
         'staging'            => 'Staging',
         'generic_tests'      => 'Generic tests (staging)',
+        'security'           => 'Security Gate',
         'backup'             => 'Backup',
         'install'            => 'Install',
         'clear_cache'        => 'Clear cache',

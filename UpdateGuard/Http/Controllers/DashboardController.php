@@ -61,6 +61,8 @@ class DashboardController extends BaseController
             'message'   => (string) $job->message,
             'finished'  => $job->isFinished(),
             'report'    => route('updateguard.report', ['updateId' => $job->update_id]),
+            // paused by the Security Gate: the page opens the security summary where the administrator decides
+            'decision'  => $job->isWaiting() && $job->security_report_id ? route('updateguard.security.show', ['id' => $job->security_report_id]) : '',
         ]);
     }
 }

@@ -54,8 +54,20 @@ test('translations: every key used in the code exists', function () {
     foreach (['updates', 'security', 'rollback', 'retention', 'notifications', 'advanced'] as $s) {
         $used[] = 'section_'.$s;
     }
-    foreach (['hourly', 'daily', 'full', 'protected'] as $c) {
+    foreach (['hourly', 'daily', 'full', 'protected', 'never', 'warnings', 'always', 'warn', 'block'] as $c) {
         $used[] = 'choice_'.$c;
+    }
+    $used[] = 'job_awaiting_decision';
+    $used[] = 'section_virustotal';
+    // Security Gate: statuses (Ui::secStatus), levels (Ui::risk), decisions of the reports
+    foreach (['verified', 'pass', 'warning', 'fail', 'mismatch', 'blocked', 'error', 'notavailable', 'disabled'] as $x) {
+        $used[] = 'sec_status_'.$x;
+    }
+    foreach (['low', 'medium', 'high', 'critical'] as $x) {
+        $used[] = 'sec_level_'.$x;
+    }
+    foreach (['allowed', 'blocked', 'confirm', 'upload_consent', 'overridden'] as $x) {
+        $used[] = 'sec_decision_'.$x;
     }
     $config = (function () use ($base) {
         if (!function_exists('env')) {

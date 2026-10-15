@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'feature/**']
     tags: ['v*']
   pull_request:
 
@@ -28,7 +28,7 @@ jobs:
         run: php tests/unit/run.php
       - name: shellcheck
         if: matrix.php == '8.2'
-        run: shellcheck install.sh tools/build-release.sh
+        run: shellcheck install.sh tools/build-release.sh tests/integration/run.sh tests/integration/fixtures.sh
 
   blade:
     runs-on: ubuntu-24.04
@@ -49,9 +49,18 @@ jobs:
       - name: JavaScript syntax
         run: for f in UpdateGuard/Public/js/*.js; do node --check "$f"; done
 
+  # real FreeScout (Docker): Security Gate, rollback after a failed health check, blocked package, Zip Slip,
+  # CLI JSON / exit codes, security reports, pages
+  integration:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: FreeScout + UpdateGuard end-to-end tests (Docker)
+        run: bash tests/integration/run.sh
+
   release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [lint-unit, blade]
+    needs: [lint-unit, blade, integration]
     runs-on: ubuntu-24.04
     permissions:
       contents: write

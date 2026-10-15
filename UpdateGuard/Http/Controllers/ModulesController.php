@@ -52,7 +52,25 @@ class ModulesController extends BaseController
             return redirect()->back()->with('ug_error', __('updateguard::ug.self_update'));
         }
 
-        return $this->queued($this->queue('update', $name, ['force' => (bool) $request->input('force')]));
+        $attributes = ['force' => (bool) $request->input('force')];
+        // "Install anyway" after a Security Gate block: deliberate action (checkbox + confirmation), logged, valid
+        // only for the package that was scanned (same SHA-256)
+        if ($request->input('override_report')) {
+            $report = \Modules\UpdateGuard\Entities\SecurityReport::find((int) $request->input('override_report'));
+            $data = $report ? $report->data() : [];
+            if (!$report || $report->module !== $name || empty($data['overridable']) || !\Modules\UpdateGuard\Services\Settings::get('sec_allow_override')
+                || !$request->input('understand')) {
+                return redirect()->back()->with('ug_error', __('updateguard::ug.sec_override_refused'));
+            }
+            $attributes['security_decision'] = 'override';
+            $attributes['security_sha256'] = $report->sha256;
+            $attributes['force'] = true;
+            $user = auth()->user();
+            (new \Modules\UpdateGuard\Services\Journal('', $name, $report->from_version, $report->to_version))->critical('security',
+                'Administrator override requested by '.$user->getFullName().' for a package classified '.$report->level.' ('.$report->score.'/100, SHA-256 '.$report->sha256.')');
+        }
+
+        return $this->queued($this->queue('update', $name, $attributes));
     }
 
     public function health($name)
