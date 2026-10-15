@@ -1,4 +1,4 @@
-#Modules Updates Guard (UpdateGuard)
+# Modules Updates Guard (UpdateGuard)
 ## UpdateGuard pour FreeScout
 
 Module complémentaire de [FreeScout](https://freescout.net) qui ajoute une **couche de mise à jour sécurisée** pour les
