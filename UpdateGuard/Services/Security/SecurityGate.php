@@ -80,6 +80,13 @@ class SecurityGate
         $local = null;
         if (array_filter($enabled) && $staged !== '' && is_dir($staged)) {
             $local = (new LocalStaticScanner($report['module'], $enabled))->scanFile($staged);
+            // findings an administrator trusted for this module (same rule, file and detail): kept in the report,
+            // marked, but they no longer count in the score nor in the policy
+            $trusted = !empty($s['sec_allow_trust']) ? array_flip((array) ($ctx['trusted'] ?? [])) : [];
+            foreach ($local->findings as $i => $f) {
+                $local->findings[$i]['key'] = Rules::findingKey($f);
+                $local->findings[$i]['trusted'] = Rules::isTrustable($f) && isset($trusted[$local->findings[$i]['key']]);
+            }
             $report['findings'] = array_merge($report['findings'], $local->findings);
         }
         foreach (self::LOCAL_CHECKS as $check) {
@@ -90,24 +97,28 @@ class SecurityGate
             } elseif ($local->status === ScanResult::ERROR) {
                 $report['checks'][$check] = ['status' => 'ERROR', 'detail' => $local->message];
             } else {
-                $mine = array_values(array_filter($local->findings, function ($f) use ($check) {
+                $all = array_values(array_filter($local->findings, function ($f) use ($check) {
                     return $f['check'] === $check;
                 }));
+                $mine = self::active($all);
                 $max = RiskScore::maxSeverity($mine);
                 $report['checks'][$check] = [
-                    'status' => !$mine ? 'PASS' : (Rules::ORDER[$max] >= Rules::ORDER[Rules::HIGH] ? 'FAIL' : 'WARNING'),
-                    'detail' => count($mine).' finding(s)',
-                    'count'  => count($mine),
+                    'status'  => !$mine ? 'PASS' : (Rules::ORDER[$max] >= Rules::ORDER[Rules::HIGH] ? 'FAIL' : 'WARNING'),
+                    'detail'  => count($mine).' finding(s)'.(count($all) > count($mine) ? ', '.(count($all) - count($mine)).' trusted' : ''),
+                    'count'   => count($mine),
+                    'trusted' => count($all) - count($mine),
                 ];
             }
         }
         // level of the local static analysis alone (integrity and archive have their own policy rules)
-        $report['local_level'] = $local && $local->findings ? RiskScore::compute($local->findings, self::thresholds($s))['level'] : '';
+        $activeLocal = $local ? self::active($local->findings) : [];
+        $report['local_level'] = $activeLocal ? RiskScore::compute($activeLocal, self::thresholds($s))['level'] : '';
+        $report['trusted_count'] = $local ? count($local->findings) - count($activeLocal) : 0;
 
         // external providers (hash first, upload only with consent or the explicit setting)
         // already blocked by the local checks (and not overridable, or no override asked): external scanners are not
         // asked — limited free APIs (VirusTotal: 4 / min, 500 / day) are kept for packages that could be installed
-        $localOnly = array_merge($report, ['score' => RiskScore::compute($report['findings'], self::thresholds($s))['score'], 'external' => []]);
+        $localOnly = array_merge($report, ['score' => RiskScore::compute(self::active($report['findings']), self::thresholds($s))['score'], 'external' => []]);
         $localPolicy = SecurityPolicy::decide($localOnly, $s, $decisions, $automatic);
         $skipExternal = $localPolicy['decision'] === 'blocked';
         foreach ($providers as $provider) {
@@ -128,13 +139,29 @@ class SecurityGate
             }
         }
 
-        $score = RiskScore::compute($report['findings'], self::thresholds($s));
+        $score = RiskScore::compute(self::active($report['findings']), self::thresholds($s));
         $report['score'] = $score['score'];
         $report['level'] = $score['level'];
         $report['by_check'] = $score['by_check'];
         $policy = SecurityPolicy::decide($report, $s, $decisions, $automatic);
 
         return array_merge($report, $policy);
+    }
+
+    /** Findings that count (not trusted by an administrator). */
+    public static function active(array $findings)
+    {
+        return array_values(array_filter($findings, function ($f) {
+            return empty($f['trusted']);
+        }));
+    }
+
+    /** Findings an administrator may still trust: local behaviours, not trusted yet. */
+    public static function trustable(array $findings)
+    {
+        return array_values(array_filter($findings, function ($f) {
+            return Rules::isTrustable($f) && empty($f['trusted']);
+        }));
     }
 
     public static function thresholds(array $s)
@@ -236,7 +263,7 @@ class SecurityGate
         $results = ['allowed' => 'PASS', 'blocked' => 'BLOCKED', 'confirm' => 'PASS (warnings: confirmation asked before a manual update)', 'upload_consent' => 'PASS (package unknown to an external scanner)'];
         $lines[] = 'Result: '.($results[$r['decision']] ?? $r['decision']).($r['reasons'] ? ' — '.implode(', ', $r['reasons']) : '');
         foreach (array_slice($r['findings'], 0, 40) as $f) {
-            $lines[] = '  ['.$f['severity'].'] '.$f['message'].($f['file'] !== '' ? ' — '.$f['file'].($f['line'] ? ':'.$f['line'] : '') : '');
+            $lines[] = '  ['.$f['severity'].']'.(!empty($f['trusted']) ? ' (trusted)' : '').' '.$f['message'].($f['file'] !== '' ? ' — '.$f['file'].($f['line'] ? ':'.$f['line'] : '') : '');
         }
 
         return implode("\n", $lines)."\n";

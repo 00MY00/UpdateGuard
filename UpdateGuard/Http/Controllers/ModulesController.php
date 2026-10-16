@@ -35,7 +35,9 @@ class ModulesController extends BaseController
         $self = $name === ModuleDiscoveryService::SELF;
         $lastScan = \Modules\UpdateGuard\Entities\SecurityReport::where('module', $name)->orderBy('id', 'desc')->first();
 
-        return view('updateguard::module', compact('module', 'backups', 'jobs', 'pending', 'self', 'lastScan'));
+        $trusts = \Modules\UpdateGuard\Entities\Trust::active()->where('module', $name)->orderBy('id', 'desc')->get();
+
+        return view('updateguard::module', compact('module', 'backups', 'jobs', 'pending', 'self', 'lastScan', 'trusts'));
     }
 
     public function check($name)

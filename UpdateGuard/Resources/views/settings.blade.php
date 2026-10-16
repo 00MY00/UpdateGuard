@@ -117,6 +117,7 @@
             <div class="ug-indent">
                 {!! $select('sec_confirm', 'security_gate') !!}
                 {!! $check('sec_allow_override', 'security_gate') !!}
+                {!! $check('sec_allow_trust', 'security_gate') !!}
                 {!! $check('vt_ask_upload', ['security_gate', 'vt_enabled']) !!}
                 {!! $check('vt_auto_upload', ['security_gate', 'vt_enabled']) !!}
             </div>

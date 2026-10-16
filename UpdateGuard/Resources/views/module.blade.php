@@ -115,8 +115,35 @@
                 </form>
             </div>
         @endif
+        {{-- state of every test and what was reported, from the saved report: no new scan needed --}}
+        @include('updateguard::partials.security_checks', ['report' => $lastScan->data(), 'open' => false])
     @else
         <p class="text-help">{{ __('updateguard::ug.sec_never_scanned') }}</p>
+    @endif
+
+    @if ($trusts->isNotEmpty())
+        <h3>{{ __('updateguard::ug.trust_list') }}</h3>
+        <p class="text-help">{{ __('updateguard::ug.trust_list_help') }}</p>
+        <table class="table table-striped ug-table ug-cards">
+            <thead>
+                <tr><th>{{ __('updateguard::ug.sec_findings') }}</th><th>{{ __('updateguard::ug.trust_reason') }}</th><th>{{ __('updateguard::ug.trust_by') }}</th><th class="ug-actions-col">{{ __('updateguard::ug.action') }}</th></tr>
+            </thead>
+            <tbody>
+            @foreach ($trusts as $t)
+                <tr>
+                    <td class="ug-card-title">[{{ $t->severity }}] {{ $t->message }}@if ($t->file !== '')<br><small class="text-help">{{ $t->file }}</small>@endif</td>
+                    <td data-label="{{ __('updateguard::ug.trust_reason') }}">{{ $t->reason }}</td>
+                    <td data-label="{{ __('updateguard::ug.trust_by') }}">{{ $t->user_name }} · {{ $t->created_at }} · {{ $t->version }}</td>
+                    <td class="ug-actions">
+                        <form method="POST" action="{{ route('updateguard.trust.revoke', ['id' => $t->id]) }}" class="ug-inline" data-ug-confirm="{{ __('updateguard::ug.trust_revoke_confirm') }}">
+                            {{ csrf_field() }}
+                            <button type="submit" class="btn btn-default btn-sm">{{ __('updateguard::ug.trust_revoke') }}</button>
+                        </form>
+                    </td>
+                </tr>
+            @endforeach
+            </tbody>
+        </table>
     @endif
 
     <h3>{{ __('updateguard::ug.backups') }}</h3>

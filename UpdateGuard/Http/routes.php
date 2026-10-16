@@ -38,6 +38,8 @@ Route::group([
     Route::get('/security', $admins + ['uses' => 'SecurityController@index'])->name('updateguard.security');
     Route::post('/security/cleanup', $admins + ['uses' => 'SecurityController@cleanup'])->name('updateguard.security.cleanup');
     Route::get('/security/{id}', $admins + ['uses' => 'SecurityController@show'])->where('id', '[0-9]+')->name('updateguard.security.show');
+    Route::post('/security/{id}/trust', $admins + ['uses' => 'SecurityController@trust'])->where('id', '[0-9]+')->name('updateguard.security.trust');
+    Route::post('/trusts/{id}/revoke', $admins + ['uses' => 'SecurityController@revokeTrust'])->where('id', '[0-9]+')->name('updateguard.trust.revoke');
     Route::post('/security/{id}/upload', $admins + ['uses' => 'SecurityController@upload'])->where('id', '[0-9]+')->name('updateguard.security.upload');
     // security scans without installing: all modules, or one module
     Route::post('/scan-all', $admins + ['uses' => 'SecurityController@scanAll'])->name('updateguard.scan_all');

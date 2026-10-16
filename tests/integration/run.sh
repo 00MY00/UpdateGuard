@@ -232,6 +232,23 @@ if [ "$(grep -c ' 200$' /tmp/ug-pages.txt || true)" != "8" ] && [ -n "${GITHUB_A
     printf '::error title=pages::%s\n' "$(grep -v '^#' /tmp/ug-pages.txt | head -c 3000 | sed ':a;N;$!ba;s/\n/%0A/g')"
 fi
 
+log "8. Trust: findings accepted by an administrator stop blocking, removing the trust blocks again"
+code_of() { set +e; artisan updateguard:scan UgTestModule --zip=$PKG/malicious-1.2.0.zip --sums=$PKG/SHA256SUMS --json >/dev/null 2>&1; echo $?; set -e; }
+expect "before: the package is blocked (exit 1)" test "$(code_of)" = "1"
+php_app '
+$row = \Modules\UpdateGuard\Entities\SecurityReport::where("module", "UgTestModule")->where("to_version", "1.2.0")->orderBy("id", "desc")->first();
+$user = \App\User::where("role", \App\User::ROLE_ADMIN)->first();
+echo \Modules\UpdateGuard\Services\Security\Trusts::trustReport($row, $user, "integration test: reviewed"), "\n";' > /tmp/ug-trust.txt 2>&1 || true
+cat /tmp/ug-trust.txt
+expect "findings trusted" bash -c "test \"\$(head -n 1 /tmp/ug-trust.txt)\" -ge 1"
+expect "after trust: the same package passes (exit 0)" test "$(code_of)" = "0"
+php_app '
+$user = \App\User::where("role", \App\User::ROLE_ADMIN)->first();
+foreach (\Modules\UpdateGuard\Entities\Trust::active()->where("module", "UgTestModule")->get() as $t) {
+    \Modules\UpdateGuard\Services\Security\Trusts::revoke($t, $user);
+}'
+expect "trust removed: blocked again (exit 1)" test "$(code_of)" = "1"
+
 log "Settings: blocking rules section"
 php_app '
 $kernel = app(Illuminate\Contracts\Http\Kernel::class);

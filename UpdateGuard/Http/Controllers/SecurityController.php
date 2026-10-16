@@ -138,6 +138,41 @@ class SecurityController extends BaseController
         return $this->queued($this->queue('scan', $name, ['security_decision' => 'upload']));
     }
 
+    /**
+     * "Trust these findings": the administrator checked them (e.g. VirusTotal reported nothing). Reason and
+     * confirmation required; never for integrity / archive / external results (SecurityGate::trustable()).
+     */
+    public function trust(Request $request, $id)
+    {
+        $user = $this->admin();
+        $row = SecurityReport::findOrFail($id);
+        $reason = trim((string) $request->input('reason', ''));
+        if (!Settings::get('sec_allow_trust') || $reason === '' || !$request->input('understand')) {
+            return redirect()->route('updateguard.security.show', ['id' => $row->id])->with('ug_error', __('updateguard::ug.trust_refused'));
+        }
+        $data = $row->data();
+        foreach ((array) ($data['external'] ?? []) as $e) {
+            if (($e['status'] ?? '') === 'BLOCKED') {
+                // an external scanner flagged the package itself: not something to trust from here
+                return redirect()->route('updateguard.security.show', ['id' => $row->id])->with('ug_error', __('updateguard::ug.trust_refused_external'));
+            }
+        }
+        $n = \Modules\UpdateGuard\Services\Security\Trusts::trustReport($row, $user, $reason);
+
+        return redirect()->route('updateguard.module', ['name' => $row->module])->with('ug_success', __('updateguard::ug.trust_done', ['count' => $n]));
+    }
+
+    public function revokeTrust($id)
+    {
+        $user = $this->admin();
+        $trust = \Modules\UpdateGuard\Entities\Trust::findOrFail($id);
+        if ($trust->revoked_at === null) {
+            \Modules\UpdateGuard\Services\Security\Trusts::revoke($trust, $user);
+        }
+
+        return redirect()->back()->with('ug_success', __('updateguard::ug.trust_revoked'));
+    }
+
     public function cleanup()
     {
         $this->admin();

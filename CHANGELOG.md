@@ -3,6 +3,20 @@
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions [SemVer](https://semver.org/lang/fr/).
 La version du module est celle de `UpdateGuard/module.json`.
 
+## [1.8.0] - 2026-10-16
+
+### Ajouté
+- **Faire confiance aux constats d'un module** : depuis un rapport de sécurité, un administrateur qui a vérifié les
+  comportements signalés (par exemple VirusTotal ne détecte rien) peut les accepter pour ce module, avec un motif
+  obligatoire et une confirmation. Les constats acceptés restent visibles dans les rapports (« confiance accordée »)
+  mais ne comptent plus dans le score ni dans le blocage. La confiance porte sur chaque constat précis (règle, fichier
+  et détail : fonction, domaine…) : un nouveau comportement dans une version suivante est signalé de nouveau. Jamais
+  pour une empreinte différente, une archive dangereuse ou une détection externe. Journalisé, révocable (« Retirer »
+  sur la fiche du module), désactivable (Réglages › Règles de blocage › Mises à jour manuelles).
+- **Fiche du module : état de chaque test de la dernière analyse** (intégrité, structure, PHP, obfuscation,
+  exécutables, système de fichiers, réseau, scripts d'installation, scanners externes) et ce qui a été signalé
+  (fichier et ligne), sans relancer d'analyse ; liste des constats acceptés.
+
 ## [1.7.0] - 2026-10-15
 
 ### Modifié

@@ -441,3 +441,35 @@ test('automatic update: a package unknown to VirusTotal is not installed until i
     same('allowed', ug_scan(ug_module_with(''), [], [], [$known], null, [], true)['decision'], 'known and clean: installed automatically');
     same('upload_consent', ug_scan(ug_module_with(''), [], [], [$unknown])['decision'], 'manual update: asks before uploading');
 });
+
+test('trust: behaviours accepted by an administrator stop counting, new ones are reported again', function () {
+    $code = '$v = shell_exec("git --version"); $x = file_get_contents("https://api.partner.test/v1");';
+    $r = ug_scan(ug_module_with($code));
+    same(['command_exec', 'network', 'unknown_domain'], ug_rules($r['findings']));
+    same(30, $r['score']);
+    $keys = array_column(\Modules\UpdateGuard\Services\Security\SecurityGate::trustable($r['findings']), 'key');
+    same(3, count($keys));
+
+    // the same package, trusted: kept in the report, marked, no longer counted
+    $t = ug_scan(ug_module_with($code), [], ['trusted' => $keys]);
+    same(0, $t['score']);
+    same('LOW', $t['level']);
+    same(3, $t['trusted_count']);
+    same(3, count(array_filter($t['findings'], function ($f) { return !empty($f['trusted']); })), 'still listed');
+    same('PASS', $t['checks']['php']['status']);
+    same(1, $t['checks']['php']['trusted']);
+
+    // a later version with a new behaviour: only the new one counts
+    $t = ug_scan(ug_module_with($code.' $y = passthru("ls"); $z = file_get_contents("https://other.test/x");'), [], ['trusted' => $keys]);
+    $active = ug_rules(\Modules\UpdateGuard\Services\Security\SecurityGate::active($t['findings']));
+    same(['command_exec', 'unknown_domain'], $active, 'passthru() and the new domain are reported');
+
+    // setting off: trust ignored
+    same(30, ug_scan(ug_module_with($code), ['sec_allow_trust' => false], ['trusted' => $keys])['score']);
+
+    // never for the integrity / archive / external results
+    $r = ug_scan(ug_module_with(''), [], ['integrity' => 'MISMATCH']);
+    same([], \Modules\UpdateGuard\Services\Security\SecurityGate::trustable($r['findings']), 'a checksum mismatch cannot be trusted');
+    $r = ug_scan(ug_module_with(''), [], ['integrity' => 'MISMATCH', 'trusted' => [\Modules\UpdateGuard\Services\Security\Rules::findingKey(Rules::finding('checksum_mismatch'))]]);
+    same('blocked', $r['decision']);
+});

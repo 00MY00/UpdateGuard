@@ -638,6 +638,7 @@ class UpdateRunner
             'sha256'           => $sha256,
             'integrity'        => $integrity,
             'structure_errors' => $structureErrors,
+            'trusted'          => Security\Trusts::keysFor($module['name']),
         ], $s, Security\Providers::external($s), Security\Providers::cache($s), $decisions, (bool) $job->automatic);
         $sec['update_id'] = $job->update_id;
         $sec['override_by'] = $sec['overridden'] ? (string) $job->triggered_by : '';

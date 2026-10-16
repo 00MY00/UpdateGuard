@@ -61,6 +61,7 @@ return [
         'sec_auto_block_migrations'      => true,   // automatic update: refused when it brings database migrations
         'sec_auto_block_republished'     => true,   // automatic update: refused for a version republished with another SHA-256
         'sec_allow_override'             => true,
+        'sec_allow_trust'                => true,   // administrators may trust reported behaviours of a module
         'sec_save_reports'               => true,
         'sec_confirm'                    => 'warnings', // never | warnings | always (manual updates)
         'sec_level_medium'               => 21,

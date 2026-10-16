@@ -229,6 +229,21 @@ main. Un paquet inconnu de VirusTotal est retenté chaque heure (sans requête, 
   pas le fichier publié) ni pour une archive dangereuse (elle ne peut pas être extraite sans risque) : ces deux règles
   ne peuvent qu'être désactivées.
 
+### Faire confiance à des constats
+
+Un module peut avoir besoin d'un comportement que l'analyse signale (lancer `git`, appeler l'API de son auteur…).
+Depuis le **rapport de sécurité**, après vérification, « Faire confiance à ces constats » les accepte pour ce module :
+motif obligatoire, case de confirmation, entrée dans le journal. Les constats acceptés restent affichés, marqués
+« confiance accordée », mais ne comptent plus dans le score ni dans le blocage.
+
+- La confiance porte sur **chaque constat précis** (règle + fichier + détail), pas sur le module : une nouvelle
+  fonction, un nouveau domaine ou un nouveau fichier dans une version suivante est signalé de nouveau.
+- **Jamais** pour une empreinte différente, une archive dangereuse ou un résultat d'un scanner externe.
+- Le formulaire indique si VirusTotal confirme « rien détecté » ou s'il n'y a aucune confirmation externe.
+- La fiche du module affiche l'**état de chaque test de la dernière analyse** et ce qui a été signalé, sans relancer
+  d'analyse, ainsi que la liste des constats acceptés avec « Retirer ».
+- Désactivable : Réglages › Règles de blocage › « Permettre aux administrateurs de faire confiance… ».
+
 ### Analyser sans installer
 
 - **Tableau de bord › « Analyser tous les modules »** et **fiche d'un module › « Analyse de sécurité »** : le paquet

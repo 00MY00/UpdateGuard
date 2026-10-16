@@ -100,6 +100,24 @@ class Rules
     /** Severity order. */
     const ORDER = ['' => 0, self::LOW => 1, self::MEDIUM => 2, self::HIGH => 3, self::CRITICAL => 4];
 
+    /** Checks whose findings can never be trusted: they are not "behaviours" of the code but facts about the package. */
+    const UNTRUSTABLE_CHECKS = ['integrity', 'structure', 'external'];
+
+    public static function isTrustable(array $finding)
+    {
+        return !in_array($finding['check'], self::UNTRUSTABLE_CHECKS, true);
+    }
+
+    /**
+     * Identity of a finding for "trust": rule + file + message (the message carries the detail: function name,
+     * domain, path...). Not the line number, which moves with every edit. A new function, domain or file in a later
+     * version gives a new key: it is reported again.
+     */
+    public static function findingKey(array $finding)
+    {
+        return sha1($finding['rule'].'|'.$finding['file'].'|'.$finding['message']);
+    }
+
     public static function finding($rule, $file = '', $line = 0, $detail = '')
     {
         $r = self::RULES[$rule];

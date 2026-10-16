@@ -36,7 +36,7 @@ class PackageScan
         }
         $from = $module ? $module['version'] : '';
         $ctx = ['module' => $name, 'from' => $from, 'to' => $from, 'source' => '', 'zip' => '', 'staged' => '', 'sha256' => '',
-            'integrity' => 'NOT AVAILABLE', 'structure_errors' => []];
+            'integrity' => 'NOT AVAILABLE', 'structure_errors' => [], 'trusted' => Trusts::keysFor($name)];
         $providers = Providers::external($s);
         $work = Paths::base('security/scan-'.getmypid().'-'.mt_rand());
         @mkdir($work, 0775, true);

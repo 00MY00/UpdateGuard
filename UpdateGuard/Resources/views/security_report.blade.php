@@ -141,14 +141,40 @@
     @if (empty($report['findings']))
         <p class="text-help">{{ __('updateguard::ug.sec_no_finding') }}</p>
     @else
-        <div class="ug-log">
-            @foreach ($report['findings'] as $f)
-                <div class="ug-log-line ug-level-{{ $f['severity'] === 'CRITICAL' || $f['severity'] === 'HIGH' ? 'error' : ($f['severity'] === 'MEDIUM' ? 'warning' : 'info') }}">
-                    <span class="ug-log-level">[{{ $f['severity'] }}]</span>
-                    <span class="ug-log-message">{{ $f['message'] }}</span>
-                    @if ($f['file'] !== '')<span class="ug-log-module">{{ $f['file'] }}@if ($f['line']):{{ $f['line'] }}@endif</span>@endif
-                </div>
-            @endforeach
+        @include('updateguard::partials.security_checks', ['report' => $report, 'open' => true])
+    @endif
+
+    @php
+        $trustable = \Modules\UpdateGuard\Services\Security\SecurityGate::trustable((array) ($report['findings'] ?? []));
+        $externalStatuses = array_column((array) ($report['external'] ?? []), 'status');
+        $externalBlocked = in_array('BLOCKED', $externalStatuses, true);
+        $externalClean = $externalStatuses && !array_diff($externalStatuses, ['PASS']);
+    @endphp
+    @if ($trustable && \Modules\UpdateGuard\Services\Settings::get('sec_allow_trust') && !$externalBlocked && is_dir(\Modules\UpdateGuard\Services\Paths::modules($row->module)))
+        {{-- trust: per finding (rule + file + detail), reason required, logged, revocable on the module page --}}
+        <div class="panel panel-default ug-trust">
+            <div class="panel-heading"><strong>{{ __('updateguard::ug.trust_title', ['module' => $row->module]) }}</strong></div>
+            <div class="panel-body">
+                <p>{{ __('updateguard::ug.trust_text', ['count' => count($trustable)]) }}</p>
+                @if ($externalClean)
+                    <p class="text-success">✓ {{ __('updateguard::ug.trust_external_clean') }}</p>
+                @else
+                    <p class="text-warning">! {{ __('updateguard::ug.trust_no_external') }}</p>
+                @endif
+                <form method="POST" action="{{ route('updateguard.security.trust', ['id' => $row->id]) }}"
+                      data-ug-confirm="{{ __('updateguard::ug.trust_confirm', ['count' => count($trustable), 'module' => $row->module]) }}">
+                    {{ csrf_field() }}
+                    <div class="form-group">
+                        <label for="ug-trust-reason">{{ __('updateguard::ug.trust_reason') }}</label>
+                        <textarea class="form-control" id="ug-trust-reason" name="reason" rows="2" required maxlength="2000"
+                                  placeholder="{{ __('updateguard::ug.trust_reason_placeholder') }}"></textarea>
+                    </div>
+                    <label class="ug-force"><input type="checkbox" name="understand" value="1" required> {{ __('updateguard::ug.trust_understand') }}</label>
+                    <div class="ug-confirm-buttons">
+                        <button type="submit" class="btn btn-default">✓ {{ __('updateguard::ug.trust_button') }}</button>
+                    </div>
+                </form>
+            </div>
         </div>
     @endif
     <p class="text-help">{{ __('updateguard::ug.sec_disclaimer') }}</p>

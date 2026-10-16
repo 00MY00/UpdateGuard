@@ -78,6 +78,11 @@
 .ug-dep-off { opacity: .45; pointer-events: none; }
 .ug-settings fieldset > h4 { border-top: 1px solid #eee; padding-top: 12px; }
 
+/* trusted findings */
+.ug-trusted-note { color: #2b6b2b; margin-left: 6px; }
+.ug-findings summary { cursor: pointer; margin: 6px 0; font-weight: 600; }
+.ug-trust textarea { max-width: 600px; }
+
 /* packages unknown to VirusTotal (dashboard) */
 .ug-unknown-list { list-style: none; padding: 0; margin: 0 0 10px; }
 .ug-unknown-list li { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee; }
