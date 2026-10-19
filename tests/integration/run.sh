@@ -334,6 +334,57 @@ cat /tmp/ug-unknown.txt
 expect "dashboard shows the \"not known by VirusTotal\" panel" grep -q '^200 1$' /tmp/ug-unknown.txt
 php_app '\App\Option::set("updateguard.vt_enabled", 0);'
 
+log "UpdateGuard checks itself (files of its release) and points to FreeScout's Modules page for its updates"
+# "Scan all modules" (scenario 7) ran SelfCheck for UpdateGuard, never the static analysis (its rules would flag it)
+self_reports="$(php_app 'echo \DB::table("updateguard_security_reports")->where("module", "UpdateGuard")->count(), " ", json_decode((string) \DB::table("updateguard_modules")->where("name", "UpdateGuard")->value("capabilities"), true)["self_check"]["status"] ?? "none";')"
+expect "scan of all modules: no security report on UpdateGuard itself, its own check instead ($self_reports)" \
+    bash -c "printf '%s' \"\$0\" | grep -qE '^0 [a-z]+$'" "$self_reports"
+# the release files built here (FILES.sha256, SHA256SUMS, UpdateGuard.zip) answered by a local DownloadService
+bash "$ROOT/tools/build-release.sh" >/dev/null
+docker exec "$APP" mkdir -p /tmp/ug-rel
+for f in UpdateGuard.zip FILES.sha256 SHA256SUMS; do docker cp "$ROOT/dist/$f" "$APP:/tmp/ug-rel/$f"; done
+docker exec "$APP" chown -R www-data:www-data /tmp/ug-rel
+self_check="$(php_app '
+$d = new class(5) extends Modules\UpdateGuard\Services\DownloadService {
+    public function text($url) {
+        $f = "/tmp/ug-rel/".basename(parse_url($url, PHP_URL_PATH));
+        if (!is_file($f)) { throw new RuntimeException("HTTP 404: ".$url); }
+        return file_get_contents($f);
+    }
+};
+$z = new ZipArchive(); $z->open("/tmp/ug-rel/UpdateGuard.zip"); $z->extractTo("/tmp/ug-self"); $z->close();
+$dir = "/tmp/ug-self/UpdateGuard";
+$v = json_decode(file_get_contents($dir."/module.json"), true)["version"];
+$a = Modules\UpdateGuard\Services\SelfCheck::run($dir, $v, $d);
+file_put_contents($dir."/Services/Ui.php", "\n", FILE_APPEND);
+file_put_contents($dir."/Public/extra.php", "<?php\n");
+$b = Modules\UpdateGuard\Services\SelfCheck::run($dir, $v, $d);
+echo $a["status"], " ", $a["files"], " ", $b["status"], " ", implode(",", $b["modified"]), " ", implode(",", $b["added"]);')"
+echo "$self_check"
+expect "files of the published release: intact; a changed and an added file: modified ($self_check)" \
+    bash -c "printf '%s' \"\$0\" | grep -qE '^intact [0-9]+ modified Services/Ui.php Public/extra.php$'" "$self_check"
+php_app '
+$r = Modules\UpdateGuard\Entities\ModuleHealth::where("name", "UpdateGuard")->first();
+$c = $r->capabilities();
+$c["self_check"] = ["status" => "verified", "version" => $r->installed_version, "files" => 104, "vt" => null, "at" => date("c")];
+$r->capabilities = json_encode($c);
+$r->latest_version = "99.0.0";
+$r->save();
+\App\Option::set("updateguard.last_run", date("c"));'
+: > /tmp/ug-self.txt
+for page in "" /modules /modules/UpdateGuard; do
+    php_app '
+$kernel = app(Illuminate\Contracts\Http\Kernel::class);
+auth()->guard()->setUser(\App\User::where("role", \App\User::ROLE_ADMIN)->first());
+$html = (string) $kernel->handle(Illuminate\Http\Request::create("http://localhost/update-guard'"$page"'", "GET"))->getContent();
+echo "'"$page"'", " ", substr_count($html, "/modules/list\""), " ", substr_count($html, "Updated by FreeScout"), " ", substr_count($html, "✓ Verified"), "\n";' >> /tmp/ug-self.txt 2>&1 || true
+done
+cat /tmp/ug-self.txt
+expect "dashboard: update of UpdateGuard offered through FreeScout's Modules page, verified badge" grep -qE '^ [1-9][0-9]* [1-9][0-9]* [1-9]' /tmp/ug-self.txt
+expect "Modules page: button to FreeScout's Modules page, neutral \"Updated by FreeScout\" on UpdateGuard" grep -qE '^/modules [1-9][0-9]* [1-9][0-9]* [1-9]' /tmp/ug-self.txt
+expect "UpdateGuard page: button and verified check" grep -qE '^/modules/UpdateGuard [1-9][0-9]* 0 [1-9]' /tmp/ug-self.txt
+php_app '\DB::table("updateguard_modules")->where("name", "UpdateGuard")->update(["latest_version" => ""]);'
+
 log "Versions"
 docker exec -w /var/www/html "$APP" sh -c 'php -r "echo \"PHP \".PHP_VERSION.PHP_EOL;"; php artisan --version'
 

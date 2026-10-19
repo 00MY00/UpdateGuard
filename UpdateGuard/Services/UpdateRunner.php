@@ -1110,6 +1110,13 @@ class UpdateRunner
         $blocked = 0;
         foreach ($names as $name) {
             $this->journal->module = $name;
+            if ($name === ModuleDiscoveryService::SELF) {
+                // its own code holds the detection rules: integrity against the release + VirusTotal instead (SelfCheck)
+                $check = $this->runSelfCheck($upload);
+                $results[] = $name.' '.$check['status'];
+                $blocked += in_array($check['status'], ['modified', 'flagged'], true) ? 1 : 0;
+                continue;
+            }
             try {
                 $r = Security\PackageScan::run($name, 'auto', ['upload' => $upload], $this->job->update_id);
                 $results[] = $name.' '.$r['score'].'/100 '.$r['level'];
@@ -1124,6 +1131,31 @@ class UpdateRunner
         $this->journal->module = $this->job->module;
         $this->report['final_version'] = '';
         $this->finish('successful', count($names).' module(s) scanned'.($blocked ? ', '.$blocked.' would be blocked' : '').': '.implode(', ', $results), $blocked ? 'warning' : 'healthy');
+    }
+
+    /** SelfCheck of the installed UpdateGuard, saved on its row of updateguard_modules and journaled. */
+    protected function runSelfCheck($upload)
+    {
+        $module = ModuleDiscoveryService::find(ModuleDiscoveryService::SELF);
+        if (!$module) {
+            return ['status' => 'unavailable'];
+        }
+        try {
+            $check = SelfCheck::forInstalled($module, new DownloadService(min(60, (int) Settings::get('download_timeout'))), $upload);
+        } catch (\Throwable $e) {
+            $check = ['status' => 'unavailable', 'error' => $e->getMessage(), 'at' => date('c')];
+        }
+        $row = ModuleHealth::firstOrNew(['name' => ModuleDiscoveryService::SELF]);
+        $caps = $row->exists ? $row->capabilities() : [];
+        $caps['self_check'] = $check;
+        $row->capabilities = json_encode($caps, JSON_UNESCAPED_SLASHES);
+        $row->save();
+        $level = in_array($check['status'], ['modified', 'flagged'], true) ? 'error' : ($check['status'] === 'unavailable' ? 'warning' : 'info');
+        $counts = isset($check['files']) ? ' ('.(int) $check['files'].' files, '.(int) ($check['modified_count'] ?? 0).' modified, '
+            .(int) ($check['missing_count'] ?? 0).' missing, '.(int) ($check['added_count'] ?? 0).' added)' : '';
+        $this->journal->{$level}('security', 'Self check: '.$check['status'].$counts.(!empty($check['error']) ? ': '.$check['error'] : ''));
+
+        return $check;
     }
 
     protected function runCheck()

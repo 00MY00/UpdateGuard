@@ -82,6 +82,59 @@ class Ui
         return '<span class="ug-badge ug-'.$s[2].'">'.e($s[0].' '.__('updateguard::ug.'.$s[1])).'</span>';
     }
 
+    /** [symbol, translation key, css modifier] of the SelfCheck statuses */
+    const SELF_CHECK = [
+        'verified'    => ['✓', 'self_verified', 'ok'],
+        'intact'      => ['✓', 'self_intact', 'ok'],
+        'modified'    => ['×', 'self_modified', 'fail'],
+        'flagged'     => ['×', 'self_flagged', 'fail'],
+        'unavailable' => ['?', 'self_unavailable', 'muted'],
+    ];
+
+    public static function isSelf($row)
+    {
+        return $row->name === ModuleDiscoveryService::SELF;
+    }
+
+    /** Result of the last SelfCheck of UpdateGuard (row of updateguard_modules), or null. */
+    public static function selfCheck($row)
+    {
+        $check = $row->capability('self_check');
+
+        return is_array($check) && isset(self::SELF_CHECK[$check['status'] ?? '']) ? $check : null;
+    }
+
+    /** Badge of UpdateGuard's own check (shown instead of the health state on its row). */
+    public static function selfBadge($row)
+    {
+        $check = self::selfCheck($row);
+        if (!$check) {
+            return self::badge('unknown');
+        }
+        $s = self::SELF_CHECK[$check['status']];
+
+        return '<span class="ug-badge ug-'.$s[2].'">'.e($s[0].' '.__('updateguard::ug.'.$s[1])).'</span>';
+    }
+
+    /** Neutral badge of the "Safety" column for UpdateGuard: updated by FreeScout, nothing to alert about. */
+    public static function selfLevel()
+    {
+        return '<span class="ug-badge ug-muted">'.e('↻ '.__('updateguard::ug.level_self')).'</span>';
+    }
+
+    /** FreeScout's Modules page, where UpdateGuard itself is updated. */
+    public static function freescoutModulesUrl()
+    {
+        try {
+            if (\Route::has('modules')) {
+                return route('modules');
+            }
+        } catch (\Throwable $e) {
+        }
+
+        return url('/modules/list');
+    }
+
     /** State shown for a module row: an update available wins over "healthy". */
     public static function moduleState($row)
     {
@@ -164,7 +217,9 @@ class Ui
     public static function isUnknownToScanners($row)
     {
         $data = $row->data();
-        if (($data['scan_mode'] ?? '') === 'installed' || (string) $row->sha256 === '' || !is_dir(Paths::modules($row->module))) {
+        // UpdateGuard itself: its official package is proposed by its own check (SelfCheck), not from old reports
+        if ($row->module === ModuleDiscoveryService::SELF
+            || ($data['scan_mode'] ?? '') === 'installed' || (string) $row->sha256 === '' || !is_dir(Paths::modules($row->module))) {
             return false;
         }
         foreach ((array) ($data['external'] ?? []) as $e) {
@@ -244,9 +299,6 @@ class Ui
             return '';
         }
         $caps = $row->capabilities();
-        if (!empty($caps['self'])) {
-            return __('updateguard::ug.self_update');
-        }
         if (!empty($caps['official'])) {
             return __('updateguard::ug.latest_none_official');
         }

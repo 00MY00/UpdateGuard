@@ -40,7 +40,31 @@ Activer**.
 
 UpdateGuard **ne se met pas à jour lui-même** (« UpdateGuard updates are handled by FreeScout ») : son `module.json`
 déclare `latestVersionUrl` / `latestVersionZipUrl`, c'est le bouton natif de FreeScout (ou `install.sh`) qui le met à
-jour.
+jour. Quand une nouvelle version existe, le tableau de bord et la page Modules affichent **« Mettre à jour dans
+FreeScout »**, qui ouvre la page Modules de FreeScout.
+
+**UpdateGuard se vérifie lui-même** sans se mettre à jour (à chaque vérification des versions, « Vérifier maintenant »
+sur sa fiche, ou « Analyser tous les modules ») :
+
+1. **Intégrité** : chaque fichier installé est comparé à `FILES.sha256`, publié avec la release **de la version
+   installée** (`releases/download/v<version>/`, tags jamais déplacés). Un fichier modifié, manquant ou ajouté sur le
+   serveur est signalé (« Fichiers modifiés », avec la liste).
+2. **VirusTotal** (s'il est activé) : l'empreinte de l'`UpdateGuard.zip` officiel de cette release (son `SHA256SUMS`)
+   est recherchée, une seule requête par version grâce au cache. Si VirusTotal ne la connaît pas, l'archive officielle
+   peut lui être envoyée (code public ; elle est d'abord comparée à `SHA256SUMS`).
+
+| Badge | Signification |
+|---|---|
+| ✓ Vérifié | fichiers identiques à la release et 0 détection VirusTotal |
+| ✓ Intègre | fichiers identiques à la release (VirusTotal désactivé ou archive pas encore connue) |
+| × Fichiers modifiés | le code installé n'est pas celui publié : alerte sur le tableau de bord |
+| × Signalé par VirusTotal | l'archive officielle est signalée : alerte sur le tableau de bord |
+| ? Non vérifiable | `FILES.sha256` introuvable (version de développement, réseau) |
+
+UpdateGuard ne s'analyse pas avec ses propres règles : son code contient les motifs de détection et se signalerait
+lui-même. Le contrôle d'intégrité le remplace : il prouve que le code installé est exactement le code publié. Limite :
+il protège contre une modification sur le serveur, pas contre un dépôt GitHub compromis (VirusTotal apporte alors un
+avis extérieur).
 
 ## Utilisation (administrateurs)
 
@@ -63,7 +87,8 @@ Refresh : menu ☰ de FreeScout › Gérer › UpdateGuard.
 | ✓ Full Safe Update | version distante + ZIP + **SHA-256** + **contrôle de santé natif** | oui (si activé) |
 | ! Protected Update | version distante + ZIP + SHA-256 **ou** contrôle natif | seulement si le réglage l'autorise |
 | ! Generic Validation | version distante + ZIP, ni SHA-256 ni contrôle natif : tests génériques | jamais |
-| × Unsupported Automatic Update | pas de `latestVersionUrl` / `latestVersionZipUrl`, module officiel sous licence, UpdateGuard lui-même | jamais |
+| × Unsupported Automatic Update | pas de `latestVersionUrl` / `latestVersionZipUrl`, module officiel sous licence | jamais |
+| ↻ Mis à jour par FreeScout | UpdateGuard lui-même (voir plus haut : il se vérifie, FreeScout le met à jour) | jamais |
 
 La sauvegarde et le retour arrière des fichiers sont faits à **tous** les niveaux.
 

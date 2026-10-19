@@ -148,7 +148,8 @@ class ModuleDiscoveryService
         ];
         $latest = '';
         $zipHash = '';
-        if (!$self && !$official && $versionUrl !== '') {
+        // UpdateGuard reads its own latest version too (shown, never installed by itself: FreeScout updates it)
+        if (!$official && $versionUrl !== '') {
             try {
                 $latest = VersionService::fromResponse($download->text($versionUrl));
                 if ($latest === '') {
@@ -157,7 +158,7 @@ class ModuleDiscoveryService
             } catch (\Throwable $e) {
                 $caps['error'] = 'latestVersionUrl: '.$e->getMessage();
             }
-            $sumsUrl = DownloadService::sumsUrl($m);
+            $sumsUrl = $self ? '' : DownloadService::sumsUrl($m);
             if ($sumsUrl !== '' && $zipUrl !== '') {
                 $caps['sums_url'] = $sumsUrl;
                 try {
@@ -166,6 +167,14 @@ class ModuleDiscoveryService
                 } catch (\Throwable $e) {
                     // no SHA256SUMS published: level without checksum
                 }
+            }
+        }
+        if ($self) {
+            // integrity of its own files against the release + VirusTotal (SelfCheck): shown instead of an alert
+            try {
+                $caps['self_check'] = SelfCheck::forInstalled($module, $download);
+            } catch (\Throwable $e) {
+                $caps['self_check'] = ['status' => 'unavailable', 'error' => $e->getMessage(), 'at' => date('c')];
             }
         }
         $level = SafetyLevel::compute([

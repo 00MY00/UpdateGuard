@@ -139,6 +139,20 @@ class SecurityController extends BaseController
     }
 
     /**
+     * Sends the official UpdateGuard.zip of the installed version to VirusTotal (it did not know it): a public
+     * package, checked against the release's SHA256SUMS before it is sent (SelfCheck).
+     */
+    public function uploadSelf()
+    {
+        $user = $this->admin();
+        $name = \Modules\UpdateGuard\Services\ModuleDiscoveryService::SELF;
+        (new Journal('', $name, '', ''))
+            ->info('security', 'Upload of the official UpdateGuard package to VirusTotal accepted by '.($user->getFullName() ?: 'Administrator'));
+
+        return $this->queued($this->queue('scan', $name, ['security_decision' => 'upload']));
+    }
+
+    /**
      * "Trust these findings": the administrator checked them (e.g. VirusTotal reported nothing). Reason and
      * confirmation required; never for integrity / archive / external results (SecurityGate::trustable()).
      */

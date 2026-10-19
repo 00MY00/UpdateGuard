@@ -3,6 +3,27 @@
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions [SemVer](https://semver.org/lang/fr/).
 La version du module est celle de `UpdateGuard/module.json`.
 
+## [1.9.0] - 2026-10-19
+
+### Ajouté
+- **UpdateGuard se vérifie lui-même**, sans se mettre à jour :
+  - chaque fichier installé est comparé à `FILES.sha256`, publié avec la release de la version installée : un fichier
+    modifié, manquant ou ajouté sur le serveur est signalé ;
+  - si VirusTotal est activé, l'archive officielle de cette version est recherchée (une requête par version, gardée
+    en cache) ; si VirusTotal ne la connaît pas, elle peut lui être envoyée après comparaison avec `SHA256SUMS`.
+  Badges : « Vérifié », « Intègre », « Fichiers modifiés », « Signalé par VirusTotal », « Non vérifiable ». Les deux
+  alertes sont aussi affichées sur le tableau de bord.
+- **Mise à jour d'UpdateGuard** : sa dernière version est maintenant lue. Quand une nouvelle version existe, le
+  tableau de bord, la page Modules et sa fiche affichent « Mettre à jour dans FreeScout », qui ouvre la page Modules
+  de FreeScout.
+- Chaque release publie `FILES.sha256` (empreinte de chaque fichier du module, inclus dans `SHA256SUMS`).
+
+### Modifié
+- La ligne d'UpdateGuard n'affiche plus « × Mise à jour automatique non prise en charge » ni « Non vérifié » : badge
+  neutre « Mis à jour par FreeScout » et résultat de sa vérification.
+- « Analyser tous les modules » n'applique plus l'analyse statique à UpdateGuard (son code contient les motifs de
+  détection et se signalait lui-même) : c'est sa vérification d'intégrité qui est faite.
+
 ## [1.8.3] - 2026-10-19
 
 ### Corrigé

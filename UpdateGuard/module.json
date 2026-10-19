@@ -2,7 +2,7 @@
     "name": "UpdateGuard",
     "alias": "updateguard",
     "description": "Safe updates for FreeScout community modules: SHA-256, staging, backup, health checks, crash detection, automatic rollback and restorations.",
-    "version": "1.8.3",
+    "version": "1.9.0",
     "detailsUrl": "https://github.com/00MY00/UpdateGuard",
     "author": "00MY00 and UpdateGuard contributors",
     "img": "../modules/updateguard/img/module.svg",

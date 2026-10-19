@@ -10,8 +10,12 @@
 
     <h2 class="ug-title">{{ $module->name }} <small>{{ $module->installed_version }}</small> {!! $Ui::badge($Ui::moduleState($module)) !!}</h2>
 
-    @if ($self)
-        <div class="alert alert-info">{{ __('updateguard::ug.self_update') }}</div>
+    @if ($self && $module->updateAvailable())
+        <div class="alert alert-info ug-self-update">
+            ↑ {{ __('updateguard::ug.self_update_available', ['version' => $module->latest_version]) }}
+            <a href="{{ $Ui::freescoutModulesUrl() }}" class="btn btn-primary btn-sm">{{ __('updateguard::ug.self_update_button') }}</a>
+        </div>
+    @elseif ($self)
     @elseif ($module->safety_level !== 'unsupported' && $module->auto_update)
         <div class="alert alert-info">{{ __('updateguard::ug.managed_by') }}</div>
     @endif
@@ -62,8 +66,68 @@
     </div>
     @endunless
 
+    @if ($self)
+        @php $check = $Ui::selfCheck($module); $vt = $check['vt'] ?? null; @endphp
+        <div class="ug-toolbar">
+            <form method="POST" action="{{ route('updateguard.module.check', ['name' => $module->name]) }}" class="ug-inline">
+                {{ csrf_field() }}
+                <button type="submit" class="btn btn-default">{{ __('updateguard::ug.self_check_now') }}</button>
+            </form>
+        </div>
+        <h3>{{ __('updateguard::ug.self_check_title') }} {!! $Ui::selfBadge($module) !!}</h3>
+        <p class="text-help">{{ __('updateguard::ug.self_check_help') }}</p>
+        @if (!$check)
+            <p class="text-help">{{ __('updateguard::ug.latest_not_checked') }}</p>
+        @else
+            <table class="table table-condensed ug-kv">
+                <tr><th>{{ __('updateguard::ug.self_files') }}</th><td>
+                    @if ($check['status'] === 'unavailable')
+                        {!! $Ui::secStatus('NOT AVAILABLE') !!} <small class="text-help">{{ $check['error'] ?? '' }}</small>
+                    @elseif ($check['status'] === 'modified')
+                        {!! $Ui::secStatus('MISMATCH') !!}
+                        <div class="alert alert-danger">× {{ __('updateguard::ug.self_modified_help') }}</div>
+                        @foreach (['modified', 'missing', 'added'] as $kind)
+                            @if (!empty($check[$kind.'_count']))
+                                <strong>{{ __('updateguard::ug.self_list_'.$kind) }} ({{ $check[$kind.'_count'] }})</strong>
+                                <ul class="ug-file-list">@foreach ($check[$kind] as $file)<li><code>{{ $file }}</code></li>@endforeach
+                                    @if ($check[$kind.'_count'] > count($check[$kind]))<li>…</li>@endif</ul>
+                            @endif
+                        @endforeach
+                    @else
+                        {!! $Ui::secStatus('VERIFIED') !!} {{ __('updateguard::ug.self_files_ok', ['count' => $check['files'], 'version' => $check['version']]) }}
+                    @endif
+                </td></tr>
+                <tr><th>{{ __('updateguard::ug.self_vt') }}</th><td>
+                    @if (!\Modules\UpdateGuard\Services\Settings::get('vt_enabled'))
+                        {!! $Ui::secStatus('DISABLED') !!}
+                    @elseif ($check['status'] === 'modified' || $check['status'] === 'unavailable')
+                        —
+                    @elseif (!$vt)
+                        {!! $Ui::secStatus('NOT AVAILABLE') !!} <small class="text-help">{{ $check['error'] ?? '' }}</small>
+                    @else
+                        {!! $Ui::secStatus($vt['status']) !!}
+                        @if (!empty($vt['stats'])) <small>{{ (int) ($vt['stats']['malicious'] ?? 0) }} malicious · {{ (int) ($vt['stats']['suspicious'] ?? 0) }} suspicious</small> @endif
+                        @if (!empty($vt['link'])) · <a href="{{ $vt['link'] }}" target="_blank" rel="noopener noreferrer">{{ __('updateguard::ug.view_report') }}</a> @endif
+                        @if (!empty($vt['message']) && empty($vt['stats'])) <small class="text-help">{{ $vt['message'] }}</small> @endif
+                        @if (!empty($vt['unknown']))
+                            <div class="alert alert-info">
+                                {{ __('updateguard::ug.self_vt_unknown') }}
+                                <form method="POST" action="{{ route('updateguard.self.upload') }}" class="ug-inline" data-ug-confirm="{{ __('updateguard::ug.self_vt_send_confirm') }}">
+                                    {{ csrf_field() }}
+                                    <button type="submit" class="btn btn-default btn-sm">{{ __('updateguard::ug.self_vt_send') }}</button>
+                                </form>
+                            </div>
+                        @endif
+                    @endif
+                </td></tr>
+                <tr><th>{{ __('updateguard::ug.last_check') }}</th><td>{{ !empty($check['at']) ? date('Y-m-d H:i', strtotime($check['at'])) : '—' }}</td></tr>
+            </table>
+        @endif
+    @endif
+
     <div class="row">
         <div class="col-md-6">
+            @unless ($self)
             <h3>{{ __('updateguard::ug.compatibility_report') }}</h3>
             <table class="table table-condensed ug-kv">
                 <tr><th>{{ __('updateguard::ug.version_discovery') }}</th><td>{{ $pass($module->latest_version !== '', empty($caps['version_url'])) }} @if (!empty($caps['error']))<br><small class="text-danger">{{ $caps['error'] }}</small>@endif</td></tr>
@@ -74,6 +138,7 @@
                 <tr><th>{{ __('updateguard::ug.rollback') }}</th><td>{{ !empty($caps['has_migrations']) ? 'FILES ONLY' : 'FILE-SAFE' }}</td></tr>
                 <tr><th>{{ __('updateguard::ug.safety') }}</th><td>{!! $Ui::level($module->safety_level) !!}</td></tr>
             </table>
+            @endunless
         </div>
         <div class="col-md-6">
             <h3>{{ __('updateguard::ug.details') }}</h3>
@@ -101,6 +166,7 @@
         </div>
     </div>
 
+    @unless ($self)
     <h3>{{ __('updateguard::ug.sec_last_scan') }}</h3>
     @if ($lastScan)
         <p>{!! $Ui::risk($lastScan->score, $lastScan->level) !!}
@@ -120,6 +186,7 @@
     @else
         <p class="text-help">{{ __('updateguard::ug.sec_never_scanned') }}</p>
     @endif
+    @endunless
 
     @if ($trusts->isNotEmpty())
         <h3>{{ __('updateguard::ug.trust_list') }}</h3>

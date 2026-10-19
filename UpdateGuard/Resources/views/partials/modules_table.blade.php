@@ -25,14 +25,22 @@
             <td data-label="{{ __('updateguard::ug.latest') }}">{{ $m->latest_version ?: '—' }}
                 @php $why = \Modules\UpdateGuard\Services\Ui::latestUnknownReason($m); @endphp
                 @if ($why !== '')<br><small class="text-help ug-latest-why">{{ $why }}</small>@endif</td>
-            <td data-label="{{ __('updateguard::ug.health') }}">{!! \Modules\UpdateGuard\Services\Ui::badge(\Modules\UpdateGuard\Services\Ui::moduleState($m)) !!}</td>
-            <td data-label="{{ __('updateguard::ug.safety') }}">{!! \Modules\UpdateGuard\Services\Ui::level($m->safety_level) !!}</td>
+            @if ($self)
+                {{-- UpdateGuard checks its own files against its release (+ VirusTotal) instead of updating itself --}}
+                <td data-label="{{ __('updateguard::ug.health') }}">{!! \Modules\UpdateGuard\Services\Ui::selfBadge($m) !!}</td>
+                <td data-label="{{ __('updateguard::ug.safety') }}">{!! \Modules\UpdateGuard\Services\Ui::selfLevel() !!}</td>
+            @else
+                <td data-label="{{ __('updateguard::ug.health') }}">{!! \Modules\UpdateGuard\Services\Ui::badge(\Modules\UpdateGuard\Services\Ui::moduleState($m)) !!}</td>
+                <td data-label="{{ __('updateguard::ug.safety') }}">{!! \Modules\UpdateGuard\Services\Ui::level($m->safety_level) !!}</td>
+            @endif
             @if ($backups !== null)
                 <td data-label="{{ __('updateguard::ug.last_backup') }}">{{ $backups[$m->name] ?? '—' }}</td>
             @endif
             <td class="ug-actions">
                 @if ($self)
-                    <small class="text-help">{{ __('updateguard::ug.self_update') }}</small>
+                    @if ($m->updateAvailable())
+                        <a href="{{ \Modules\UpdateGuard\Services\Ui::freescoutModulesUrl() }}" class="btn btn-primary btn-sm" title="{{ __('updateguard::ug.self_update') }}">↑ {{ __('updateguard::ug.self_update_button') }}</a>
+                    @endif
                 @elseif ($m->updateAvailable() && $m->safety_level !== 'unsupported' && $m->blocked_version !== $m->latest_version)
                     <form method="POST" action="{{ route('updateguard.module.update', ['name' => $m->name]) }}" class="ug-inline" data-ug-confirm="{{ __('updateguard::ug.confirm_update', ['module' => $m->name, 'from' => $m->installed_version, 'to' => $m->latest_version]) }}">
                         {{ csrf_field() }}

@@ -10,6 +10,32 @@
     @if ($lastRun === '' || strtotime($lastRun) < time() - 600)
         <div class="alert alert-warning">! {{ __('updateguard::ug.scheduler_missing') }}</div>
     @endif
+    @php
+        $selfRow = $modules->where('name', \Modules\UpdateGuard\Services\ModuleDiscoveryService::SELF)->first();
+        $selfCheck = $selfRow ? \Modules\UpdateGuard\Services\Ui::selfCheck($selfRow) : null;
+    @endphp
+    @if ($selfCheck && in_array($selfCheck['status'], ['modified', 'flagged'], true))
+        <div class="alert alert-danger">
+            × {{ __('updateguard::ug.self_'.$selfCheck['status'].'_alert') }}
+            <a href="{{ route('updateguard.module', ['name' => $selfRow->name]) }}">{{ __('updateguard::ug.details') }}</a>
+        </div>
+    @endif
+    @if ($selfCheck && $selfCheck['status'] === 'intact' && !empty($selfCheck['vt']['unknown']) && \Modules\UpdateGuard\Services\Settings::get('vt_enabled'))
+        <div class="alert alert-info">
+            {{ __('updateguard::ug.self_vt_unknown') }}
+            <form method="POST" action="{{ route('updateguard.self.upload') }}" class="ug-inline" data-ug-confirm="{{ __('updateguard::ug.self_vt_send_confirm') }}">
+                {{ csrf_field() }}
+                <button type="submit" class="btn btn-default btn-sm">{{ __('updateguard::ug.self_vt_send') }}</button>
+            </form>
+        </div>
+    @endif
+    @if ($selfRow && $selfRow->updateAvailable())
+        {{-- UpdateGuard does not replace itself: FreeScout's Modules page (or install.sh) does --}}
+        <div class="alert alert-info ug-self-update">
+            ↑ {{ __('updateguard::ug.self_update_available', ['version' => $selfRow->latest_version]) }}
+            <a href="{{ \Modules\UpdateGuard\Services\Ui::freescoutModulesUrl() }}" class="btn btn-primary btn-sm">{{ __('updateguard::ug.self_update_button') }}</a>
+        </div>
+    @endif
 
     <div class="ug-toolbar">
         <form method="POST" action="{{ route('updateguard.check_all') }}" class="ug-inline">

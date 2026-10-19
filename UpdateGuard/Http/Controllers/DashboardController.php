@@ -60,7 +60,10 @@ class DashboardController extends BaseController
         $this->admin();
         $job = UpdateJob::findOrFail($id);
         $report = route('updateguard.report', ['updateId' => $job->update_id]);
-        if ($job->type === 'scan') {
+        if ($job->type === 'scan' && $job->module === ModuleDiscoveryService::SELF) {
+            // UpdateGuard's own check is shown on its module page (SelfCheck), not in a security report
+            $report = route('updateguard.module', ['name' => $job->module]);
+        } elseif ($job->type === 'scan') {
             // a security scan opens its security report (one module) or the reports of this scan (all modules)
             $reports = \Modules\UpdateGuard\Entities\SecurityReport::where('update_id', $job->update_id)->pluck('id');
             $report = count($reports) === 1

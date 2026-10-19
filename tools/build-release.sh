@@ -28,7 +28,7 @@ cp "$ROOT/CHANGELOG.md" "$ROOT/LICENSE" "$STAGE/UpdateGuard/"
 find "$STAGE" -name '.DS_Store' -delete
 
 mkdir -p "$DIST"
-rm -f "$DIST/UpdateGuard.zip" "$DIST/SHA256SUMS" "$DIST/module.json" "$DIST/version.txt"
+rm -f "$DIST/UpdateGuard.zip" "$DIST/SHA256SUMS" "$DIST/module.json" "$DIST/version.txt" "$DIST/FILES.sha256"
 if command -v zip >/dev/null 2>&1; then
     (cd "$STAGE" && zip -qrX "$DIST/UpdateGuard.zip" UpdateGuard)
 else
@@ -38,6 +38,9 @@ cp "$ROOT/install.sh" "$DIST/install.sh"
 cp "$ROOT/UpdateGuard/module.json" "$DIST/module.json"
 # plain-text latest version: FreeScout's "latestVersionUrl" convention (app/Console/Commands/ModuleUpdate.php)
 printf '%s\n' "$version" >"$DIST/version.txt"
-(cd "$DIST" && sha256sum UpdateGuard.zip install.sh module.json version.txt >SHA256SUMS)
+# SHA-256 of every file of the module, as installed (paths relative to UpdateGuard/): UpdateGuard compares its own
+# installed files with the FILES.sha256 of its version (SelfCheck). Unlike the ZIP, these hashes are reproducible.
+(cd "$STAGE/UpdateGuard" && find . -type f | sed 's|^\./||' | LC_ALL=C sort | while IFS= read -r f; do sha256sum "$f"; done) >"$DIST/FILES.sha256"
+(cd "$DIST" && sha256sum UpdateGuard.zip install.sh module.json version.txt FILES.sha256 >SHA256SUMS)
 printf 'UpdateGuard %s : %s\n' "$version" "$DIST/UpdateGuard.zip"
 cat "$DIST/SHA256SUMS"

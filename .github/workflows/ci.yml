@@ -83,4 +83,5 @@ jobs:
             dist/install.sh
             dist/module.json
             dist/version.txt
+            dist/FILES.sha256
             dist/SHA256SUMS
