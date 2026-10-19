@@ -175,3 +175,15 @@ test('page: one progress bar per operation even when the frame and the page both
     same(true, \Modules\UpdateGuard\Services\Ui::firstProgress(51), 'another operation');
     same(false, \Modules\UpdateGuard\Services\Ui::firstProgress(0));
 });
+
+test('versions: latestVersionUrl answering plain text or a module.json (as FreeScout reads it)', function () {
+    $v = '\Modules\UpdateGuard\Services\VersionService';
+    same('1.6.0', $v::fromResponse("1.6.0\n"));
+    same('1.6.0', $v::fromResponse('v1.6.0'));
+    same('1.6.0', $v::fromResponse("\xEF\xBB\xBF{\n  \"name\": \"Refresh\",\n  \"version\": \"1.6.0\",\n  \"providers\": [\"Modules\\Refresh\\Providers\\RefreshServiceProvider\"]\n}"), 'module.json of a release');
+    same('2.0.1', $v::fromResponse('{"name": "X", "version": "2.0.1", }'), 'malformed JSON: FreeScout pattern');
+    same('', $v::fromResponse('<html><body>Not Found</body></html>'));
+    same('', $v::fromResponse('{"name": "X"}'), 'module.json without version');
+    same('', $v::fromResponse('{"version": "latest"}'));
+    same('', $v::fromResponse(''));
+});

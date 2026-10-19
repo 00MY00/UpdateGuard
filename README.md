@@ -324,8 +324,9 @@ UpdateGuard works with any community module that follows FreeScout's own update 
    }
    ```
 
-   - `latestVersionUrl` answers the latest version as **plain text** (`1.2.0`), the same convention as
-     `freescout:module-update`.
+   - `latestVersionUrl` answers the latest version as **plain text** (`1.2.0`, the convention of
+     `freescout:module-update`) or as a **`module.json`** with a `"version"` (e.g.
+     `releases/latest/download/module.json`), the two answers FreeScout's Modules page accepts.
    - `latestVersionZipUrl`: a ZIP containing `MyModule/module.json` at its root (GitHub branch archives
      `MyModule-main/` are accepted too). HTTPS only.
    - Optional: `sha256sumsUrl` (default: `SHA256SUMS` next to the ZIP), `requiredAppVersion`, `requiredPhpVersion`,

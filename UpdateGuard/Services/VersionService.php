@@ -18,6 +18,29 @@ class VersionService
         return preg_match('/^\d+(\.\d+){0,3}([-+][0-9A-Za-z.\-+]+)?$/', $version) ? $version : '';
     }
 
+    /**
+     * Version answered by a latestVersionUrl, as FreeScout's Modules page reads it: plain text ("1.4.8"),
+     * or a module.json (its "version"), e.g. releases/latest/download/module.json. "" when there is none.
+     */
+    public static function fromResponse($body)
+    {
+        $body = trim((string) $body);
+        $plain = self::normalize($body);
+        if ($plain !== '') {
+            return $plain;
+        }
+        $json = json_decode(preg_replace('/^\xEF\xBB\xBF/', '', $body), true);
+        if (is_array($json) && isset($json['version']) && is_scalar($json['version'])) {
+            return self::normalize($json['version']);
+        }
+        // malformed JSON: the same pattern as FreeScout (app/Http/Controllers/ModulesController.php)
+        if (preg_match('#"version":[^"]*"([\d\.]+)"#', $body, $m)) {
+            return self::normalize($m[1]);
+        }
+
+        return '';
+    }
+
     /** -1, 0 or 1; an invalid version is lower than any valid one. */
     public static function compare($a, $b)
     {

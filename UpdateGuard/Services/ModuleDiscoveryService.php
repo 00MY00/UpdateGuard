@@ -8,8 +8,8 @@ use Modules\UpdateGuard\Entities\ModuleHealth;
  * Installed modules and what they publish (FreeScout's module system: nwidart \Module facade, \App\Module).
  *
  * Read from each module.json:
- *   latestVersionUrl      plain-text latest version (same convention as freescout:module-update,
- *                         app/Console/Commands/ModuleUpdate.php: the body, trimmed, is the version)
+ *   latestVersionUrl      latest version: plain text ("1.2.0") or a module.json with "version", the two answers
+ *                         FreeScout's Modules page accepts (app/Http/Controllers/ModulesController.php)
  *   latestVersionZipUrl   ZIP of that version (same as App\Module::updateModule())
  *   sha256sumsUrl         optional; default: SHA256SUMS next to the ZIP
  *   healthCommand         optional artisan command; default convention: "<alias>:health"
@@ -150,9 +150,9 @@ class ModuleDiscoveryService
         $zipHash = '';
         if (!$self && !$official && $versionUrl !== '') {
             try {
-                $latest = VersionService::normalize($download->text($versionUrl));
+                $latest = VersionService::fromResponse($download->text($versionUrl));
                 if ($latest === '') {
-                    $caps['error'] = 'latestVersionUrl does not answer a version number';
+                    $caps['error'] = 'latestVersionUrl answers neither a version number (plain text) nor a module.json with a "version"';
                 }
             } catch (\Throwable $e) {
                 $caps['error'] = 'latestVersionUrl: '.$e->getMessage();

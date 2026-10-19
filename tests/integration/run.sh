@@ -253,6 +253,16 @@ php_app '\DB::table("updateguard_modules")->where("name", "UgTestModule")->updat
 artisan updateguard:run --no-auto >/dev/null 2>&1 || true
 latest="$(php_app 'echo \DB::table("updateguard_modules")->where("name", "UgTestModule")->value("latest_version");')"
 expect "\"Check all\" (scheduler) finds it too" test "$latest" = "$remote"
+# a latestVersionUrl answering a module.json (as Refresh does): accepted by FreeScout's Modules page, so by UpdateGuard too
+php_app '
+$f = base_path("Modules/UgTestModule/module.json");
+$m = json_decode(file_get_contents($f), true);
+$m["latestVersionUrl"] = "https://github.com/00MY00/UpdateGuard/releases/latest/download/module.json";
+file_put_contents($f, json_encode($m, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+\DB::table("updateguard_modules")->where("name", "UgTestModule")->update(["latest_version" => ""]);'
+artisan updateguard:check UgTestModule >/dev/null 2>&1 || true
+latest="$(php_app '$r = \DB::table("updateguard_modules")->where("name", "UgTestModule")->first(); echo $r->latest_version, (json_decode($r->capabilities, true)["error"] ?? "");')"
+expect "latest version read from a module.json ($latest)" test "$latest" = "$remote"
 
 log "8. Trust: findings accepted by an administrator stop blocking, removing the trust blocks again"
 code_of() { set +e; artisan updateguard:scan UgTestModule --zip=$PKG/malicious-1.2.0.zip --sums=$PKG/SHA256SUMS --json >/dev/null 2>&1; echo $?; set -e; }

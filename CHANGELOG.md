@@ -3,6 +3,14 @@
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions [SemVer](https://semver.org/lang/fr/).
 La version du module est celle de `UpdateGuard/module.json`.
 
+## [1.8.3] - 2026-10-19
+
+### Corrigé
+- **« latestVersionUrl does not answer a version number »** (module Refresh par exemple) : un `latestVersionUrl` qui
+  renvoie un `module.json` (comme `releases/latest/download/module.json`) est maintenant accepté, comme le fait la page
+  Modules de FreeScout : la version est lue dans son champ `"version"`. Le texte brut (`1.2.0`) reste accepté. Le
+  message d'erreur indique les deux formats attendus.
+
 ## [1.8.2] - 2026-10-19
 
 ### Corrigé
