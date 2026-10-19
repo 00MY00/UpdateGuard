@@ -232,6 +232,28 @@ if [ "$(grep -c ' 200$' /tmp/ug-pages.txt || true)" != "8" ] && [ -n "${GITHUB_A
     printf '::error title=pages::%s\n' "$(grep -v '^#' /tmp/ug-pages.txt | head -c 3000 | sed ':a;N;$!ba;s/\n/%0A/g')"
 fi
 
+log "9. Detection of a new version (latestVersionUrl, real GitHub release)"
+# the test module (1.3.0 now) announces UpdateGuard's public version.txt as its latest version: a newer version
+# must be found by "Check all" (scheduler) and by updateguard:check
+php_app '
+$f = base_path("Modules/UgTestModule/module.json");
+$m = json_decode(file_get_contents($f), true);
+$m["latestVersionUrl"] = "https://github.com/00MY00/UpdateGuard/releases/latest/download/version.txt";
+file_put_contents($f, json_encode($m, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));'
+remote="$(curl -fsSL https://github.com/00MY00/UpdateGuard/releases/latest/download/version.txt | tr -d '[:space:]')"
+artisan updateguard:check UgTestModule > /tmp/ug-check.txt 2>&1 || true
+cat /tmp/ug-check.txt
+detected="$(php_app '$r = \DB::table("updateguard_modules")->where("name", "UgTestModule")->first(); echo $r->installed_version, " ", $r->latest_version, " ", (json_decode($r->capabilities, true)["error"] ?? "");')"
+printf 'installed / latest / error: %s (published: %s)\n' "$detected" "$remote"
+expect "latest version read from latestVersionUrl" bash -c "test \"\$(printf '%s' \"\$0\" | cut -d' ' -f2)\" = \"\$1\"" "$detected" "$remote"
+expect "the update is shown as available on the dashboard" \
+    bash -c "docker exec -u www-data -w /var/www/html $APP php -r 'require \"vendor/autoload.php\"; \$app = require \"bootstrap/app.php\"; \$app->make(Illuminate\\Contracts\\Console\\Kernel::class)->bootstrap(); exit(Modules\\UpdateGuard\\Entities\\ModuleHealth::named(\"UgTestModule\")->updateAvailable() ? 0 : 1);'"
+# the same through the "Check all" button: a queued job run by the scheduler
+php_app '\DB::table("updateguard_modules")->where("name", "UgTestModule")->update(["latest_version" => ""]); Modules\UpdateGuard\Services\UpdateRunner::queue("check", "*", ["triggered_by" => "integration test"]);'
+artisan updateguard:run --no-auto >/dev/null 2>&1 || true
+latest="$(php_app 'echo \DB::table("updateguard_modules")->where("name", "UgTestModule")->value("latest_version");')"
+expect "\"Check all\" (scheduler) finds it too" test "$latest" = "$remote"
+
 log "8. Trust: findings accepted by an administrator stop blocking, removing the trust blocks again"
 code_of() { set +e; artisan updateguard:scan UgTestModule --zip=$PKG/malicious-1.2.0.zip --sums=$PKG/SHA256SUMS --json >/dev/null 2>&1; echo $?; set -e; }
 expect "before: the package is blocked (exit 1)" test "$(code_of)" = "1"
