@@ -288,6 +288,16 @@ $kernel->handle(Illuminate\Http\Request::create("http://localhost/update-guard",
 echo \DB::table("updateguard_jobs")->where("type", "check")->where("status", "queued")->count(), "\n";' > /tmp/ug-auto2.txt 2>&1 || true
 expect "no new check while the last one is recent" grep -q '^0$' /tmp/ug-auto2.txt
 
+log "Robustness: stuck operation, emptied setting"
+php_app '\DB::table("updateguard_jobs")->insert(["update_id" => "UG-20261019-99999", "type" => "check", "module" => "*", "status" => "checking",
+    "triggered_by" => "test", "created_at" => now()->subHours(3), "updated_at" => now()->subHours(3)]);'
+artisan updateguard:run --no-auto >/dev/null 2>&1 || true
+stuck="$(php_app 'echo \DB::table("updateguard_jobs")->where("update_id", "UG-20261019-99999")->value("status");')"
+expect "an operation stuck for hours is marked interrupted (status: $stuck)" test "$stuck" = "failed"
+saved="$(php_app 'Modules\UpdateGuard\Services\Settings::save(["sec_score_threshold" => "", "sec_level_high" => "55"]); echo Modules\UpdateGuard\Services\Settings::get("sec_score_threshold"), " ", Modules\UpdateGuard\Services\Settings::get("sec_level_high");')"
+expect "an emptied number field keeps its value, another field is saved ($saved)" test "$saved" = "80 55"
+php_app 'Modules\UpdateGuard\Services\Settings::save(["sec_level_high" => "50"]);'
+
 log "Settings: blocking rules section"
 php_app '
 $kernel = app(Illuminate\Contracts\Http\Kernel::class);

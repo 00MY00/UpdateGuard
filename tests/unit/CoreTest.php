@@ -168,3 +168,10 @@ test('republication: same version with another SHA-256 is reported, never silent
     same(\Modules\UpdateGuard\Services\RepublishGuard::KEEP, count($many), 'history bounded');
     check(isset($many['1.0.29']), 'most recent kept');
 });
+
+test('page: one progress bar per operation even when the frame and the page both ask for it', function () {
+    same(true, \Modules\UpdateGuard\Services\Ui::firstProgress(50), 'page');
+    same(false, \Modules\UpdateGuard\Services\Ui::firstProgress(50), 'frame: same operation, not shown again');
+    same(true, \Modules\UpdateGuard\Services\Ui::firstProgress(51), 'another operation');
+    same(false, \Modules\UpdateGuard\Services\Ui::firstProgress(0));
+});

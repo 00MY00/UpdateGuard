@@ -436,4 +436,5 @@ return [
     'latest_none_url' => 'publiceert zijn versies niet (geen latestVersionUrl)',
     'latest_not_checked' => 'nog niet gecontroleerd',
     'latest_check_error' => 'controle mislukt: :error',
+    'job_scanning' => 'Beveiligingsanalyse',
 ];

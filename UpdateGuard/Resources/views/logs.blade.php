@@ -17,7 +17,7 @@
         </select>
         <select name="status" class="form-control input-sm" aria-label="{{ __('updateguard::ug.status') }}">
             <option value="">{{ __('updateguard::ug.status') }}</option>
-            @foreach (array_merge(\Modules\UpdateGuard\Entities\UpdateJob::FINISHED, ['observing', 'queued']) as $status)
+            @foreach (array_merge(\Modules\UpdateGuard\Entities\UpdateJob::FINISHED, ['observing', 'queued', 'awaiting_decision']) as $status)
                 <option value="{{ $status }}" @if ($f['status'] === $status) selected @endif>{{ __('updateguard::ug.job_'.$status) }}</option>
             @endforeach
         </select>

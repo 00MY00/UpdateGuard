@@ -436,4 +436,5 @@ return [
     'latest_none_url' => 'ne publie pas ses versions (pas de latestVersionUrl)',
     'latest_not_checked' => 'pas encore vérifié',
     'latest_check_error' => 'vérification impossible : :error',
+    'job_scanning' => 'Analyse de sécurité',
 ];

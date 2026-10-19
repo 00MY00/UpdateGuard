@@ -27,7 +27,8 @@ class DashboardController extends BaseController
         ];
         $lastRollback = UpdateJob::where('status', 'rolled_back')->orderBy('id', 'desc')->first();
         $lastUpdate = UpdateJob::where('type', 'update')->where('status', 'successful')->whereColumn('from_version', '!=', 'to_version')->orderBy('id', 'desc')->first();
-        $running = UpdateJob::whereIn('status', array_merge(UpdateJob::ACTIVE, ['observing']))->orderBy('id')->get();
+        // running, observed, and waiting for a decision (shown with "Decision required": otherwise nobody sees it)
+        $running = UpdateJob::whereIn('status', array_merge(UpdateJob::ACTIVE, UpdateJob::WAITING, ['observing']))->orderBy('id')->get();
         $lastRun = (string) \App\Option::get('updateguard.last_run', '', true, false);
         // the banner of the last failure is shown until the dashboard is opened
         $alert = \Modules\UpdateGuard\Services\Ui::alert();

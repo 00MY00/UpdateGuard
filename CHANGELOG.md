@@ -3,6 +3,22 @@
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions [SemVer](https://semver.org/lang/fr/).
 La version du module est celle de `UpdateGuard/module.json`.
 
+## [1.8.2] - 2026-10-19
+
+### Corrigé
+- **Barre de progression affichée deux fois** (par exemple « Préparation (staging) ») : une seule barre par opération
+  sur la page.
+- **Opération bloquée pour toujours** : une opération interrompue (processus arrêté, serveur redémarré) restait « en
+  cours » et empêchait la vérification automatique des versions. Elle est maintenant marquée en échec après le délai
+  du verrou (ou « restauration échouée » si des fichiers avaient déjà été installés).
+- Une vérification des versions en échec n'est plus relancée à chaque chargement de page (une tentative par heure).
+- Un champ numérique vidé pendant la saisie n'est plus enregistré à 0 (un seuil de 0 bloquait tout) : la valeur
+  enregistrée est gardée.
+- Les mises à jour **en attente d'une décision** de la Security Gate sont affichées sur le tableau de bord ; sans
+  décision après 7 jours, elles sont annulées et le module n'est plus bloqué.
+- Nouvel état « Analyse de sécurité » pendant la Security Gate (la barre restait sur l'étape précédente).
+- Le filtre « État » de la page Journaux propose « Décision requise ».
+
 ## [1.8.1] - 2026-10-19
 
 ### Corrigé

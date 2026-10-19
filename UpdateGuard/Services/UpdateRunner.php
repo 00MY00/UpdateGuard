@@ -25,7 +25,7 @@ class UpdateRunner
     const PROGRESS = [
         'queued' => 0, 'checking' => 5, 'downloading' => 15, 'verifying' => 25, 'staging' => 35, 'backing_up' => 45,
         'installing' => 60, 'clearing_cache' => 70, 'health_check' => 80, 'rolling_back' => 85, 'observing' => 90,
-        'awaiting_decision' => 50,
+        'scanning' => 40, 'awaiting_decision' => 42,
     ];
 
     /** @var callable|null */
@@ -79,6 +79,8 @@ class UpdateRunner
                 ->warning('lock', 'Abandoned lock removed (pid '.($stale['pid'] ?? '?').', '.($stale['date'] ?? '?').')');
             $this->recoverInterrupted();
         }
+        $this->recoverStale();
+        $this->expireWaiting();
         foreach (UpdateJob::where('status', 'observing')->orderBy('id')->get() as $job) {
             $this->observe($job);
         }
@@ -107,6 +109,48 @@ class UpdateRunner
                 $row->state = 'critical';
                 $row->save();
             }
+        }
+    }
+
+    /**
+     * Operations that hold no lock (version check, security scan) or whose process died without leaving an abandoned
+     * lock: an operation that has not moved for longer than the lock timeout is interrupted. Without this, a killed
+     * "check" stayed "running" for ever and the automatic check was never started again.
+     */
+    protected function recoverStale()
+    {
+        $timeout = max(1, (int) Settings::get('lock_timeout_minutes'));
+        $lock = $this->lock ? $this->lock->current() : null;
+        $states = array_diff(UpdateJob::ACTIVE, ['queued']);
+        foreach (UpdateJob::whereIn('status', $states)->where('updated_at', '<', now()->subMinutes($timeout))->get() as $job) {
+            if ($lock && ($lock['update_id'] ?? '') === $job->update_id && !$this->lock->isAbandoned()) {
+                continue; // still held by a live process
+            }
+            $installed = $job->installed_at !== null;
+            (new Journal($job->update_id, $job->module, $job->from_version, $job->to_version, $this->out))->critical('recovery',
+                'Operation without progress for '.$timeout.' min in state "'.$job->status.'": interrupted'.($installed ? '; files were already replaced, check the module and restore a backup if needed' : '; nothing was installed'));
+            $job->status = $installed ? 'rollback_failed' : 'failed';
+            $job->message = 'interrupted (no progress for '.$timeout.' min)';
+            $job->finished_at = now();
+            $job->save();
+            $row = $installed ? ModuleHealth::named($job->module) : null;
+            if ($row) {
+                $row->state = 'critical';
+                $row->save();
+            }
+        }
+    }
+
+    /** An update waiting for a decision is cancelled after 7 days: it no longer blocks the module. */
+    protected function expireWaiting()
+    {
+        foreach (UpdateJob::whereIn('status', UpdateJob::WAITING)->where('updated_at', '<', now()->subDays(7))->get() as $job) {
+            $job->status = 'failed';
+            $job->message = 'no decision within 7 days: cancelled (nothing was installed)';
+            $job->finished_at = now();
+            $job->save();
+            (new Journal($job->update_id, $job->module, $job->from_version, $job->to_version, $this->out))
+                ->warning('security', 'Update waiting for a decision for 7 days: cancelled, nothing was installed');
         }
     }
 
@@ -537,6 +581,7 @@ class UpdateRunner
         // ----------------------------------------------------------------------------------------- Security Gate
         // before anything is changed: SHA-256, archive, static analysis, external scanners, score, policy
         if ($gate) {
+            $this->status('scanning');
             $sec = $this->securityGate($module, $from, $to, $source, $zip, $staged, $actual, $integrity, []);
             if ($sec['decision'] === 'blocked') {
                 $this->cleanWork();

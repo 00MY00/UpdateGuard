@@ -436,4 +436,5 @@ return [
     'latest_none_url' => 'does not publish its versions (no latestVersionUrl)',
     'latest_not_checked' => 'not checked yet',
     'latest_check_error' => 'check failed: :error',
+    'job_scanning' => 'Security analysis',
 ];

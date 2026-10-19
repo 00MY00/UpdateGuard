@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class UpdateJob extends Model
 {
-    const ACTIVE = ['queued', 'checking', 'downloading', 'verifying', 'staging', 'backing_up', 'installing', 'clearing_cache', 'health_check', 'rolling_back'];
+    const ACTIVE = ['queued', 'checking', 'downloading', 'verifying', 'staging', 'scanning', 'backing_up', 'installing', 'clearing_cache', 'health_check', 'rolling_back'];
     const FINISHED = ['successful', 'failed', 'rolled_back', 'rollback_failed', 'blocked'];
     // paused by the Security Gate before any change: confirmation, override or upload consent of an administrator
     const WAITING = ['awaiting_decision'];

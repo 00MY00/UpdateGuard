@@ -41,7 +41,7 @@ test('translations: every key used in the code exists', function () {
     }
     // keys built at run time
     $statuses = ['queued', 'checking', 'downloading', 'verifying', 'staging', 'backing_up', 'installing', 'clearing_cache',
-        'health_check', 'observing', 'successful', 'failed', 'rolling_back', 'rolled_back', 'rollback_failed', 'blocked'];
+        'health_check', 'observing', 'successful', 'failed', 'rolling_back', 'rolled_back', 'rollback_failed', 'blocked', 'scanning'];
     foreach ($statuses as $s) {
         $used[] = 'job_'.$s;
     }

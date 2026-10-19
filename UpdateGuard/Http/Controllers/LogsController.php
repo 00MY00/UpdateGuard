@@ -35,7 +35,7 @@ class LogsController extends BaseController
         if (in_array($f['severity'], Journal::LEVELS, true)) {
             $logs->where('level', $f['severity']);
         }
-        if (in_array($f['status'], array_merge(UpdateJob::ACTIVE, UpdateJob::FINISHED, ['observing']), true)) {
+        if (in_array($f['status'], array_merge(UpdateJob::ACTIVE, UpdateJob::FINISHED, UpdateJob::WAITING, ['observing']), true)) {
             $jobs->where('status', $f['status']);
             $logs->whereIn('update_id', UpdateJob::where('status', $f['status'])->pluck('update_id'));
         }

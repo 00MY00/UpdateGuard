@@ -65,7 +65,8 @@ class Settings
         foreach (self::defaults() as $name => $default) {
             if (is_bool($default)) {
                 $value = !empty($input[$name]) ? 1 : 0;
-            } elseif (!array_key_exists($name, $input)) {
+            } elseif (!array_key_exists($name, $input) || trim((string) $input[$name]) === '') {
+                // missing, or a field emptied while typing (automatic save): the saved value is kept, never 0
                 continue;
             } elseif (isset(self::CHOICES[$name])) {
                 $value = is_int($default) ? (int) $input[$name] : (string) $input[$name];

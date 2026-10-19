@@ -176,6 +176,24 @@ class Ui
         return false;
     }
 
+    /** @var array ids of the operations whose progress bar is already on the page */
+    protected static $progressShown = [];
+
+    /**
+     * true the first time a progress bar is asked for this operation in the request: the page frame (operation just
+     * started) and the page itself (operation in progress for the module, running jobs...) may ask for the same one.
+     */
+    public static function firstProgress($jobId)
+    {
+        $jobId = (int) $jobId;
+        if ($jobId <= 0 || isset(self::$progressShown[$jobId])) {
+            return false;
+        }
+        self::$progressShown[$jobId] = true;
+
+        return true;
+    }
+
     /** End of the last check of every module ("Check all", daily / hourly task, automatic check), or null. */
     public static function lastFullCheck()
     {
@@ -205,7 +223,10 @@ class Ui
             if ($running) {
                 return $running;
             }
-            $last = self::lastFullCheck();
+            // any finished attempt counts (a failing check is not started again on every page load)
+            $attempt = \Modules\UpdateGuard\Entities\UpdateJob::where('type', 'check')->where('module', '*')
+                ->whereIn('status', \Modules\UpdateGuard\Entities\UpdateJob::FINISHED)->orderBy('id', 'desc')->first();
+            $last = $attempt ? ($attempt->finished_at ?: $attempt->updated_at) : null;
             if ($last && $last->getTimestamp() > time() - 3600) {
                 return null;
             }
