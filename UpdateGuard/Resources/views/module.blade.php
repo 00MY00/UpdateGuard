@@ -20,7 +20,7 @@
         <div class="alert alert-info">{{ __('updateguard::ug.managed_by') }}</div>
     @endif
     @if ($module->state === 'critical')
-        <div class="alert alert-danger">× {{ __('updateguard::ug.critical_help') }} {{ $module->last_error }}</div>
+        <div class="alert alert-danger">× {{ __('updateguard::ug.critical_help') }} {{ (string) $module->last_error }}</div>
     @endif
     @if ($module->blocked_version !== '')
         <div class="alert alert-warning">
@@ -147,7 +147,7 @@
                 <tr><th>{{ __('updateguard::ug.latest') }}</th><td>{{ $module->latest_version ?: '—' }}</td></tr>
                 <tr><th>{{ __('updateguard::ug.known_good') }}</th><td>{{ $module->known_good_version ?: '—' }}</td></tr>
                 <tr><th>{{ __('updateguard::ug.current_state') }}</th><td>{!! $Ui::badge($module->state) !!}</td></tr>
-                <tr><th>{{ __('updateguard::ug.health') }}</th><td>{!! $Ui::badge($module->health_status) !!} <small class="text-help">{{ $module->health_checked_at }}</small></td></tr>
+                <tr><th>{{ __('updateguard::ug.health') }}</th><td>{!! $Ui::badge($module->health_status) !!} <small class="text-help">{{ $module->health_checked_at ?: '' }}</small></td></tr>
                 <tr><th>{{ __('updateguard::ug.last_check') }}</th><td>{{ $module->last_check_at ?: '—' }}</td></tr>
                 <tr><th>{{ __('updateguard::ug.last_update') }}</th><td>{{ $module->last_update_at ?: '—' }}</td></tr>
                 <tr><th>{{ __('updateguard::ug.last_backup') }}</th><td>{{ $module->last_backup_at ?: '—' }}</td></tr>
