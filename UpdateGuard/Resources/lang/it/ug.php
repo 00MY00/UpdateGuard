@@ -429,4 +429,11 @@ return [
     'trust_by' => 'Accettato da',
     'trust_revoke' => 'Rimuovi',
     'trust_revoke_confirm' => 'Rimuovere questa fiducia? Il rilevamento conterà di nuovo dalla prossima analisi o aggiornamento.',
+
+    // 1.8.1: version checks
+    'last_full_check' => 'Ultimo controllo delle versioni',
+    'latest_none_official' => 'modulo ufficiale: aggiornato da FreeScout',
+    'latest_none_url' => 'non pubblica le sue versioni (nessun latestVersionUrl)',
+    'latest_not_checked' => 'non ancora controllato',
+    'latest_check_error' => 'controllo non riuscito: :error',
 ];

@@ -429,4 +429,11 @@ return [
     'trust_by' => 'Trusted by',
     'trust_revoke' => 'Remove',
     'trust_revoke_confirm' => 'Remove this trust? The finding will count again from the next scan or update.',
+
+    // 1.8.1: version checks
+    'last_full_check' => 'Last check of the versions',
+    'latest_none_official' => 'official module: updated by FreeScout',
+    'latest_none_url' => 'does not publish its versions (no latestVersionUrl)',
+    'latest_not_checked' => 'not checked yet',
+    'latest_check_error' => 'check failed: :error',
 ];

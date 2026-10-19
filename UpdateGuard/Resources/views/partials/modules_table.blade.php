@@ -22,7 +22,9 @@
                 @if ($m->blocked_version !== '') <br><small>× {{ __('updateguard::ug.blocked_version', ['version' => $m->blocked_version]) }}</small> @endif
             </td>
             <td data-label="{{ __('updateguard::ug.installed') }}">{{ $m->installed_version ?: '—' }}</td>
-            <td data-label="{{ __('updateguard::ug.latest') }}">{{ $m->latest_version ?: '—' }}</td>
+            <td data-label="{{ __('updateguard::ug.latest') }}">{{ $m->latest_version ?: '—' }}
+                @php $why = \Modules\UpdateGuard\Services\Ui::latestUnknownReason($m); @endphp
+                @if ($why !== '')<br><small class="text-help ug-latest-why">{{ $why }}</small>@endif</td>
             <td data-label="{{ __('updateguard::ug.health') }}">{!! \Modules\UpdateGuard\Services\Ui::badge(\Modules\UpdateGuard\Services\Ui::moduleState($m)) !!}</td>
             <td data-label="{{ __('updateguard::ug.safety') }}">{!! \Modules\UpdateGuard\Services\Ui::level($m->safety_level) !!}</td>
             @if ($backups !== null)

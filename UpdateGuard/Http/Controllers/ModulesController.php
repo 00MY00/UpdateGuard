@@ -17,7 +17,9 @@ class ModulesController extends BaseController
         $modules = ModuleHealth::orderBy('name')->get();
         $backups = UpdateBackup::selectRaw('module, max(created_at) as last')->groupBy('module')->pluck('last', 'module');
 
-        return view('updateguard::modules', compact('modules', 'backups'));
+        $autoCheck = \Modules\UpdateGuard\Services\Ui::autoCheck();
+
+        return view('updateguard::modules', compact('modules', 'backups', 'autoCheck'));
     }
 
     public function show($name)

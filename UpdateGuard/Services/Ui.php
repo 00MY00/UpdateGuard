@@ -176,6 +176,69 @@ class Ui
         return false;
     }
 
+    /** End of the last check of every module ("Check all", daily / hourly task, automatic check), or null. */
+    public static function lastFullCheck()
+    {
+        try {
+            $job = \Modules\UpdateGuard\Entities\UpdateJob::where('type', 'check')->where('module', '*')
+                ->where('status', 'successful')->orderBy('id', 'desc')->first();
+
+            return $job ? ($job->finished_at ?: $job->updated_at) : null;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Versions are checked in the background when the dashboard or the Modules page is opened and the last check is
+     * more than an hour old (FreeScout's own Modules page checks on every visit): a queued "check" job, run by the
+     * scheduler within a minute; the page refreshes when it is done. Returns the queued / running check job, or null.
+     */
+    public static function autoCheck()
+    {
+        try {
+            if (!Settings::get('enabled')) {
+                return null;
+            }
+            $running = \Modules\UpdateGuard\Entities\UpdateJob::where('type', 'check')->where('module', '*')
+                ->whereIn('status', \Modules\UpdateGuard\Entities\UpdateJob::ACTIVE)->orderBy('id', 'desc')->first();
+            if ($running) {
+                return $running;
+            }
+            $last = self::lastFullCheck();
+            if ($last && $last->getTimestamp() > time() - 3600) {
+                return null;
+            }
+
+            return UpdateRunner::queue('check', '*', ['triggered_by' => 'Automatic (page opened)']);
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /** Why the latest version of a module is unknown ('' when it is known). */
+    public static function latestUnknownReason($row)
+    {
+        if ($row->latest_version !== '') {
+            return '';
+        }
+        $caps = $row->capabilities();
+        if (!empty($caps['self'])) {
+            return __('updateguard::ug.self_update');
+        }
+        if (!empty($caps['official'])) {
+            return __('updateguard::ug.latest_none_official');
+        }
+        if ($row->last_check_at === null) {
+            return __('updateguard::ug.latest_not_checked');
+        }
+        if (empty($caps['version_url'])) {
+            return __('updateguard::ug.latest_none_url');
+        }
+
+        return __('updateguard::ug.latest_check_error', ['error' => mb_substr((string) ($caps['error'] ?? ''), 0, 160)]);
+    }
+
     /** Modules whose latest version was published again with another SHA-256 (RepublishGuard). */
     public static function republished()
     {

@@ -271,6 +271,23 @@ foreach (\Modules\UpdateGuard\Entities\Trust::active()->where("module", "UgTestM
 }'
 expect "trust removed: blocked again (exit 1)" test "$(code_of)" = "1"
 
+log "Opening the dashboard checks the versions when the last check is more than an hour old"
+php_app '
+\DB::table("updateguard_jobs")->where("type", "check")->update(["finished_at" => now()->subHours(2), "updated_at" => now()->subHours(2)]);
+$kernel = app(Illuminate\Contracts\Http\Kernel::class);
+auth()->guard()->setUser(\App\User::where("role", \App\User::ROLE_ADMIN)->first());
+$response = $kernel->handle(Illuminate\Http\Request::create("http://localhost/update-guard", "GET"));
+echo $response->getStatusCode(), " ", \DB::table("updateguard_jobs")->where("type", "check")->where("triggered_by", "Automatic (page opened)")->where("status", "queued")->count(), "\n";' > /tmp/ug-auto.txt 2>&1 || true
+cat /tmp/ug-auto.txt
+expect "dashboard queued an automatic check" grep -q '^200 1$' /tmp/ug-auto.txt
+artisan updateguard:run --no-auto >/dev/null 2>&1 || true
+php_app '
+$kernel = app(Illuminate\Contracts\Http\Kernel::class);
+auth()->guard()->setUser(\App\User::where("role", \App\User::ROLE_ADMIN)->first());
+$kernel->handle(Illuminate\Http\Request::create("http://localhost/update-guard", "GET"));
+echo \DB::table("updateguard_jobs")->where("type", "check")->where("status", "queued")->count(), "\n";' > /tmp/ug-auto2.txt 2>&1 || true
+expect "no new check while the last one is recent" grep -q '^0$' /tmp/ug-auto2.txt
+
 log "Settings: blocking rules section"
 php_app '
 $kernel = app(Illuminate\Contracts\Http\Kernel::class);

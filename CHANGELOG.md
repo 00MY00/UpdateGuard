@@ -3,6 +3,18 @@
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions [SemVer](https://semver.org/lang/fr/).
 La version du module est celle de `UpdateGuard/module.json`.
 
+## [1.8.1] - 2026-10-19
+
+### Corrigé
+- **Nouvelles versions des modules vues trop tard** : les versions n'étaient vérifiées qu'une fois par jour (03:20 par
+  défaut) ou avec « Tout vérifier ». Elles sont maintenant aussi vérifiées en arrière-plan à l'ouverture du tableau de
+  bord ou de la page Modules quand la dernière vérification date de plus d'une heure (comme la page Modules de
+  FreeScout) ; la page se met à jour d'elle-même. « Dernière vérification des versions » est affichée.
+- Quand la dernière version d'un module est inconnue, la raison est indiquée : module officiel (mis à jour par
+  FreeScout), module qui ne publie pas ses versions (pas de `latestVersionUrl`), pas encore vérifié, ou erreur.
+- Test d'intégration ajouté : détection d'une nouvelle version publiée sur GitHub (commande, « Tout vérifier » et
+  vérification automatique à l'ouverture du tableau de bord) dans un vrai FreeScout.
+
 ## [1.8.0] - 2026-10-16
 
 ### Ajouté

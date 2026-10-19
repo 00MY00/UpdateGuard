@@ -429,4 +429,11 @@ return [
     'trust_by' => 'Vertrouwd door',
     'trust_revoke' => 'Intrekken',
     'trust_revoke_confirm' => 'Dit vertrouwen intrekken? De bevinding telt weer mee vanaf de volgende scan of update.',
+
+    // 1.8.1: version checks
+    'last_full_check' => 'Laatste controle van de versies',
+    'latest_none_official' => 'officiële module: wordt door FreeScout bijgewerkt',
+    'latest_none_url' => 'publiceert zijn versies niet (geen latestVersionUrl)',
+    'latest_not_checked' => 'nog niet gecontroleerd',
+    'latest_check_error' => 'controle mislukt: :error',
 ];

@@ -35,7 +35,15 @@ class DashboardController extends BaseController
             \App\Option::set('updateguard.alert_seen', $alert->id);
         }
 
-        return view('updateguard::dashboard', compact('modules', 'stats', 'lastRollback', 'lastUpdate', 'running', 'lastRun', 'alert'));
+        // versions checked in the background when the last check is more than an hour old (shown once)
+        $autoCheck = \Modules\UpdateGuard\Services\Ui::autoCheck();
+        if ($autoCheck) {
+            $running = $running->reject(function ($job) use ($autoCheck) {
+                return $job->id === $autoCheck->id;
+            });
+        }
+
+        return view('updateguard::dashboard', compact('modules', 'stats', 'lastRollback', 'lastUpdate', 'running', 'lastRun', 'alert', 'autoCheck'));
     }
 
     public function checkAll()

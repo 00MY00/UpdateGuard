@@ -21,6 +21,7 @@
             <button type="submit" class="btn btn-default">🛡 {{ __('updateguard::ug.sec_scan_all') }}</button>
         </form>
     </div>
+    @include('updateguard::partials.check_status')
 
     <div class="ug-stats">
         <div class="ug-stat"><span class="ug-stat-value">{{ $stats['modules'] }}</span><span class="ug-stat-label">{{ __('updateguard::ug.stat_modules') }}</span></div>

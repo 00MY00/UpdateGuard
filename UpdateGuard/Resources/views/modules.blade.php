@@ -8,5 +8,6 @@
         </form>
         <span class="text-help">{{ __('updateguard::ug.managed_hint') }}</span>
     </div>
+    @include('updateguard::partials.check_status')
     @include('updateguard::partials.modules_table', ['modules' => $modules, 'backups' => $backups])
 @endsection

@@ -429,4 +429,11 @@ return [
     'trust_by' => 'Vertraut von',
     'trust_revoke' => 'Entfernen',
     'trust_revoke_confirm' => 'Dieses Vertrauen entfernen? Der Befund zählt ab der nächsten Prüfung oder Aktualisierung wieder.',
+
+    // 1.8.1: version checks
+    'last_full_check' => 'Letzte Prüfung der Versionen',
+    'latest_none_official' => 'offizielles Modul: wird von FreeScout aktualisiert',
+    'latest_none_url' => 'veröffentlicht seine Versionen nicht (kein latestVersionUrl)',
+    'latest_not_checked' => 'noch nicht geprüft',
+    'latest_check_error' => 'Prüfung fehlgeschlagen: :error',
 ];
