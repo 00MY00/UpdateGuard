@@ -193,10 +193,8 @@ artisan updateguard:run --no-auto >/tmp/ug-scan-run.txt 2>&1 || true
 tail -n 8 /tmp/ug-scan-run.txt
 scans="$(php_app 'echo json_encode(\DB::table("updateguard_security_reports")->where("result", "scan")->where("update_id", "!=", "")->get(["module","decision","score","level"]));')"
 printf '%s\n' "$scans"
-expect "one scan report per installed module" \
-    bash -c "printf '%s' \"\$0\" | php -r '\$m = array_column(json_decode(stream_get_contents(STDIN), true), \"module\"); exit(in_array(\"UpdateGuard\", \$m, true) && in_array(\"UgTestModule\", \$m, true) ? 0 : 1);'" "$scans"
-expect "UpdateGuard's own published package is not blocked (no false positive)" \
-    bash -c "printf '%s' \"\$0\" | php -r '\$ok = false; foreach (json_decode(stream_get_contents(STDIN), true) as \$r) { \$ok = \$ok || (\$r[\"module\"] === \"UpdateGuard\" && \$r[\"decision\"] !== \"blocked\"); } exit(\$ok ? 0 : 1);'" "$scans"
+expect "one scan report per installed module, none for UpdateGuard itself (it checks its own files instead)" \
+    bash -c "printf '%s' \"\$0\" | php -r '\$m = array_column(json_decode(stream_get_contents(STDIN), true), \"module\"); exit(!in_array(\"UpdateGuard\", \$m, true) && in_array(\"UgTestModule\", \$m, true) ? 0 : 1);'" "$scans"
 
 log "Pages (HTTP 200 for an administrator)"
 php_app '
@@ -376,10 +374,19 @@ for page in "" /modules /modules/UpdateGuard; do
     php_app '
 $kernel = app(Illuminate\Contracts\Http\Kernel::class);
 auth()->guard()->setUser(\App\User::where("role", \App\User::ROLE_ADMIN)->first());
-$html = (string) $kernel->handle(Illuminate\Http\Request::create("http://localhost/update-guard'"$page"'", "GET"))->getContent();
-echo "'"$page"'", " ", substr_count($html, "/modules/list\""), " ", substr_count($html, "Updated by FreeScout"), " ", substr_count($html, "✓ Verified"), "\n";' >> /tmp/ug-self.txt 2>&1 || true
+$response = $kernel->handle(Illuminate\Http\Request::create("http://localhost/update-guard'"$page"'", "GET"));
+$html = (string) $response->getContent();
+echo "'"$page"'", " ", substr_count($html, "/modules/list\""), " ", substr_count($html, "Updated by FreeScout"), " ", substr_count($html, "✓ Verified"), "\n";
+if ($response->getStatusCode() !== 200) {
+    $log = glob(storage_path("logs/*.log"));
+    $lines = $log ? preg_grep("/production\\.ERROR/", file(end($log))) : [];
+    echo "#  HTTP ", $response->getStatusCode(), " ", substr((string) end($lines), 0, 900), "\n";
+}' >> /tmp/ug-self.txt 2>&1 || true
 done
 cat /tmp/ug-self.txt
+if grep -q '^#  HTTP' /tmp/ug-self.txt && [ -n "${GITHUB_ACTIONS:-}" ]; then
+    printf '::error title=self pages::%s\n' "$(grep '^#  HTTP' /tmp/ug-self.txt | head -c 3000 | sed ':a;N;$!ba;s/\n/%0A/g')"
+fi
 expect "dashboard: update of UpdateGuard offered through FreeScout's Modules page, verified badge" grep -qE '^ [1-9][0-9]* [1-9][0-9]* [1-9]' /tmp/ug-self.txt
 expect "Modules page: button to FreeScout's Modules page, neutral \"Updated by FreeScout\" on UpdateGuard" grep -qE '^/modules [1-9][0-9]* [1-9][0-9]* [1-9]' /tmp/ug-self.txt
 expect "UpdateGuard page: button and verified check" grep -qE '^/modules/UpdateGuard [1-9][0-9]* 0 [1-9]' /tmp/ug-self.txt
