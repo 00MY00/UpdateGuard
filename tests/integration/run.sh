@@ -393,6 +393,8 @@ expect "UpdateGuard page: button and verified check" grep -qE '^/modules/UpdateG
 php_app '\DB::table("updateguard_modules")->where("name", "UpdateGuard")->update(["latest_version" => ""]);'
 
 log "10. Project compatibility: a declared conflict blocks, \"Install anyway\" installs (logged)"
+# the settings test above saved a partial form (unticked switches are off): the rules of this scenario are set here
+php_app '\App\Option::set("updateguard.compat_block_incompatible", 1); \App\Option::set("updateguard.compat_allow_override", 1);'
 before="$(version_of)"
 set +e
 out="$(artisan updateguard:update UgTestModule --zip=$PKG/compat-1.4.0.zip --sums=$PKG/SHA256SUMS --yes 2>&1)"
