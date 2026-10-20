@@ -14,6 +14,7 @@ class ReportService
         'download'           => 'Download',
         'checksum'           => 'Checksum',
         'staging'            => 'Staging',
+        'compatibility'      => 'Project compatibility',
         'generic_tests'      => 'Generic tests (staging)',
         'security'           => 'Security Gate',
         'backup'             => 'Backup',
@@ -45,6 +46,7 @@ class ReportService
             'native_health' => ['available' => false, 'command' => '', 'result' => 'NOT AVAILABLE', 'json' => null],
             'generic'       => ['available' => true, 'result' => 'NOT RUN', 'checks' => []],
             'crash'         => null,
+            'compatibility' => null,
             'final_version' => '',
             'final_status'  => '',
             'errors'        => [],
@@ -95,6 +97,10 @@ class ReportService
                 $lines[] = str_pad($label, 26).$s['result'].($s['detail'] !== '' ? '  ('.$s['detail'].')' : '');
             }
         }
+        if (!empty($r['compatibility'])) {
+            $lines[] = '';
+            $lines = array_merge($lines, self::compatibilityLines($r['compatibility']));
+        }
         $lines[] = '';
         $lines[] = str_pad('Native health check:', 26).$r['native_health']['result'].($r['native_health']['command'] !== '' ? '  ['.$r['native_health']['command'].']' : '');
         $lines[] = str_pad('Generic validation:', 26).($r['generic']['available'] ? 'AVAILABLE — '.$r['generic']['result'] : 'NOT AVAILABLE');
@@ -129,6 +135,43 @@ class ReportService
 
         return implode("\n", $lines)."\n";
     }
+
+    /** "Compatibility checks" block (reports, updateguard:update output). */
+    public static function compatibilityLines(array $c)
+    {
+        $dots = function ($label, $value) {
+            return str_pad($label.' ', 22, '.').' '.$value;
+        };
+        $lines = ['Compatibility checks'.($c['source'] !== '' ? ' (source: '.$c['source'].')' : ' (no compatibility metadata)'), str_repeat('-', 40)];
+        foreach ($c['platform'] as $p) {
+            $lines[] = $dots($p['name'], $p['result']).($p['required'] !== '' ? '  (requires '.$p['required'].', installed '.$p['installed'].')' : '');
+        }
+        foreach ($c['projects'] as $p) {
+            $lines[] = $dots($p['name'], $p['state'] === 'NOT_INSTALLED' ? ($p['relationship'] === 'conflict' ? 'NOT INSTALLED' : 'OPTIONAL / NOT INSTALLED') : $p['state']);
+            $lines[] = '    Relationship: '.str_replace('_', ' ', $p['relationship']).' · Required: '.($p['required'] ? 'Yes' : 'No')
+                .($p['repository'] !== '' ? ' · '.$p['repository'] : '');
+            if ($p['installed']) {
+                $lines[] = '    Installed: '.$p['version'].($p['active'] ? '' : ' (disabled)')
+                    .($p['supported_versions'] !== '' ? ' · Supported: '.$p['supported_versions'] : '')
+                    .($p['legacy_versions'] !== '' ? ' · Legacy: '.$p['legacy_versions'] : '')
+                    .($p['conflicts'] ? ' · Known conflicts: '.implode(', ', $p['conflicts']) : '')
+                    .($p['interop'] !== '' ? ' · Interop: '.$p['interop'].($p['interop_installed'] !== '' ? ' ('.$p['interop_installed'].')' : '') : '');
+            }
+            if ($p['reason'] !== '') {
+                $lines[] = '    '.$p['reason'];
+            }
+        }
+        foreach ((array) ($c['errors'] ?? []) as $error) {
+            $lines[] = '    ! metadata: '.$error;
+        }
+        $lines[] = str_pad('Overall compatibility:', 26).$c['overall'];
+        if (!empty($c['decision'])) {
+            $lines[] = str_pad('Result:', 26).$c['decision']['label'];
+        }
+
+        return $lines;
+    }
+
 
     public static function toHtml(array $r)
     {

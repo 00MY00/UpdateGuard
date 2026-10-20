@@ -91,6 +91,33 @@ class Ui
         'unavailable' => ['?', 'self_unavailable', 'muted'],
     ];
 
+    /** Project compatibility states and platform results: [symbol, css modifier] */
+    const COMPAT = [
+        'COMPATIBLE'       => ['✓', 'ok'],
+        'PASS'             => ['✓', 'ok'],
+        'NOT_INSTALLED'    => ['–', 'muted'],
+        'NOT DECLARED'     => ['–', 'muted'],
+        'DEGRADED'         => ['!', 'warn'],
+        'UNKNOWN'          => ['?', 'muted'],
+        'INCOMPATIBLE'     => ['×', 'fail'],
+        'MISSING_REQUIRED' => ['×', 'fail'],
+        'FAIL'             => ['×', 'fail'],
+    ];
+
+    /** Badge of a compatibility state ("OPTIONAL / NOT INSTALLED" for an optional project that is absent). */
+    public static function compat($state, $relationship = '')
+    {
+        $state = (string) $state;
+        $s = isset(self::COMPAT[$state]) ? self::COMPAT[$state] : ['●', 'info'];
+        $key = 'compat_state_'.strtolower(str_replace([' ', '_'], '', $state));
+        if ($state === 'NOT_INSTALLED' && $relationship !== 'conflict') {
+            $key = 'compat_state_optional_absent';
+        }
+        $label = \Illuminate\Support\Facades\Lang::has('updateguard::ug.'.$key) ? __('updateguard::ug.'.$key) : $state;
+
+        return '<span class="ug-badge ug-'.$s[1].'">'.e($s[0].' '.$label).'</span>';
+    }
+
     public static function isSelf($row)
     {
         return $row->name === ModuleDiscoveryService::SELF;

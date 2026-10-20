@@ -392,6 +392,62 @@ expect "Modules page: button to FreeScout's Modules page, neutral \"Updated by F
 expect "UpdateGuard page: button and verified check" grep -qE '^/modules/UpdateGuard [1-9][0-9]* 0 [1-9]' /tmp/ug-self.txt
 php_app '\DB::table("updateguard_modules")->where("name", "UpdateGuard")->update(["latest_version" => ""]);'
 
+log "10. Project compatibility: a declared conflict blocks, \"Install anyway\" installs (logged)"
+before="$(version_of)"
+set +e
+out="$(artisan updateguard:update UgTestModule --zip=$PKG/compat-1.4.0.zip --sums=$PKG/SHA256SUMS --yes 2>&1)"
+code=$?
+set -e
+printf '%s\n' "$out" | tail -n 25
+expect "a conflict declared with the installed UpdateGuard blocks the update (exit 1)" test "$code" = "1"
+expect "compatibility checks shown: UpdateGuard INCOMPATIBLE" bash -c "printf '%s' \"\$0\" | grep -qE '^UpdateGuard \.+ INCOMPATIBLE'" "$out"
+expect "optional project absent: OPTIONAL / NOT INSTALLED (not blocking)" bash -c "printf '%s' \"\$0\" | grep -qE '^Refresh \.+ OPTIONAL / NOT INSTALLED'" "$out"
+expect "nothing installed (still $before)" test "$(version_of)" = "$before"
+compat="$(php_app '$j = \DB::table("updateguard_jobs")->where("module", "UgTestModule")->where("type", "update")->orderBy("id", "desc")->first();
+$r = Modules\UpdateGuard\Services\ReportService::load(Modules\UpdateGuard\Services\Paths::reports(), $j->update_id);
+echo $j->status, " ", $r["compatibility"]["overall"], " ", $r["compatibility"]["source"], " ", $r["steps"]["compatibility"]["result"], " ", isset($r["steps"]["backup"]) ? "backup" : "no-backup";')"
+expect "report: blocked, INCOMPATIBLE, from the package interop.json, before any backup ($compat)" \
+    bash -c "printf '%s' \"\$0\" | grep -q '^blocked INCOMPATIBLE package interop.json FAIL no-backup$'" "$compat"
+set +e
+out="$(artisan updateguard:update UgTestModule --zip=$PKG/compat-1.4.0.zip --sums=$PKG/SHA256SUMS --yes --override-compatibility 2>&1)"
+code=$?
+set -e
+printf '%s\n' "$out" | tail -n 8
+expect "\"Install anyway\" (--override-compatibility): installed (exit 0)" test "$code" = "0"
+expect "module is 1.4.0" test "$(version_of)" = "1.4.0"
+critical="$(php_app 'echo \DB::table("updateguard_logs")->where("module", "UgTestModule")->where("step", "compatibility")->where("level", "CRITICAL")->count();')"
+expect "the override is recorded in the logs as CRITICAL ($critical)" test "$critical" -ge 1
+php_app '\App\Option::set("updateguard.compat_allow_override", 0);'
+set +e
+artisan updateguard:update UgTestModule --zip=$PKG/compat-1.4.0.zip --sums=$PKG/SHA256SUMS --yes --force --override-compatibility >/dev/null 2>&1
+code=$?
+set -e
+last="$(php_app '$j = \DB::table("updateguard_jobs")->where("module", "UgTestModule")->where("type", "update")->orderBy("id", "desc")->first(); echo $j->status, " ", substr((string) $j->message, 0, 14);')"
+expect "overrides disabled in the settings: still blocked by the compatibility (exit $code, $last)" test "$code $last" = "1 blocked compatibility:"
+php_app '\App\Option::set("updateguard.compat_allow_override", 1);'
+# pages: confirmation before an update, module page with its compatibility section
+: > /tmp/ug-compat.txt
+for page in /modules/UgTestModule /modules/UgTestModule/update /modules/UpdateGuard; do
+    php_app '
+$kernel = app(Illuminate\Contracts\Http\Kernel::class);
+auth()->guard()->setUser(\App\User::where("role", \App\User::ROLE_ADMIN)->first());
+$response = $kernel->handle(Illuminate\Http\Request::create("http://localhost/update-guard'"$page"'", "GET"));
+$html = (string) $response->getContent();
+echo "'"$page"'", " ", $response->getStatusCode(), " ", substr_count($html, "ug-compat"), "\n";
+if ($response->getStatusCode() >= 500) {
+    $log = glob(storage_path("logs/*.log"));
+    $lines = $log ? preg_grep("/production\\.ERROR/", file(end($log))) : [];
+    echo "#  ", substr((string) end($lines), 0, 900), "\n";
+}' >> /tmp/ug-compat.txt 2>&1 || true
+done
+cat /tmp/ug-compat.txt
+if grep -q '^#  ' /tmp/ug-compat.txt && [ -n "${GITHUB_ACTIONS:-}" ]; then
+    printf '::error title=compat pages::%s\n' "$(grep '^#  ' /tmp/ug-compat.txt | head -c 3000 | sed ':a;N;$!ba;s/\n/%0A/g')"
+fi
+expect "module page: Project compatibility section" grep -qE '^/modules/UgTestModule 200 [1-9]' /tmp/ug-compat.txt
+expect "update confirmation page answers (200 or redirect when up to date)" grep -qE '^/modules/UgTestModule/update (200|302)' /tmp/ug-compat.txt
+expect "UpdateGuard page lists the modules that declare it" grep -qE '^/modules/UpdateGuard 200 [1-9]' /tmp/ug-compat.txt
+
 log "Versions"
 docker exec -w /var/www/html "$APP" sh -c 'php -r "echo \"PHP \".PHP_VERSION.PHP_EOL;"; php artisan --version'
 

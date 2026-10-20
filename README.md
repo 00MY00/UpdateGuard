@@ -95,8 +95,8 @@ La sauvegarde et le retour arrière des fichiers sont faits à **tous** les nive
 ### Déroulement d'une mise à jour
 
 ```text
-Mise à jour détectée → préflight → téléchargement (HTTPS) → SHA-256 → staging → tests génériques
-→ Security Gate (analyse locale, scanners externes, score, politique) → sauvegarde
+Mise à jour détectée → préflight → téléchargement (HTTPS) → SHA-256 → staging → compatibilité des projets
+→ tests génériques → Security Gate (analyse locale, scanners externes, score, politique) → sauvegarde
 → installation → vidage du cache → contrôle de santé → observation → SUCCÈS → version marquée stable
 
 Contrôle de santé en ÉCHEC → retour arrière automatique → version précédente remise → cache reconstruit
@@ -111,7 +111,9 @@ Contrôle de santé en ÉCHEC → retour arrière automatique → version préc�
 - **Staging** dans `storage/updateguard/staging/` : jamais d'extraction directe dans `Modules/`. Refus des `../`,
   chemins absolus, liens symboliques, fichiers hors du dossier du module, dossiers de premier niveau inattendus,
   archives corrompues, `module.json` d'un autre module (nom ou alias différent).
-- **Compatibilité** : `requiredAppVersion`, `requiredPhpVersion` et modules `requires` de la nouvelle version.
+- **Compatibilité des projets** : FreeScout, PHP et modules liés déclarés par la nouvelle version (voir
+  « Compatibilité des projets » plus bas). Elle est vérifiée **avant** l'installation ; le contrôle de santé vient
+  **après**.
 - **Migrations** : si la nouvelle version apporte des migrations, l'état de la base après un retour arrière est
   inconnu : le **retour arrière automatique est désactivé** pour cette mise à jour et elle n'est **jamais
   automatique** (sauf déclaration `"updateGuard": {"migrations": "backward-compatible"}` du module). En version 1,
@@ -169,6 +171,45 @@ FreeScout continue de fonctionner normalement et son bouton « Mettre à jour »
 modifié). Sur la page Gérer › Modules, une note conseille de faire les mises à jour des modules communautaires avec
 UpdateGuard (désactivable : Réglages › Notifications). Les modules gérés sont signalés « Managed by UpdateGuard » : ne les mettez pas à jour en même temps par un
 autre mécanisme automatique.
+
+## Compatibilité des projets
+
+Un module peut déclarer ses relations avec d'autres modules FreeScout (projets), par exemple : RefreshGlobal
+fonctionne sans Refresh, mais si Refresh est installé, sa version doit être prise en charge. **Ce n'est jamais une
+dépendance imposée** : UpdateGuard vérifie seulement ce que le module déclare, avant d'installer sa nouvelle version.
+
+| Relation | Projet absent | Projet installé |
+|---|---|---|
+| `required_dependency` | MISSING_REQUIRED (bloque) | version vérifiée ; hors plage : INCOMPATIBLE |
+| `optional_integration` | OPTIONAL / NOT INSTALLED (ne bloque pas) | version vérifiée ; hors plage : UNKNOWN |
+| `recommended_companion` | OPTIONAL / NOT INSTALLED (signalé) | comme une intégration facultative |
+| `conflict` | rien | INCOMPATIBLE (toutes versions, ou les plages données) |
+| `compatibility_tested` | rien | version comparée aux versions testées |
+
+États : **COMPATIBLE** (combinaison prise en charge), **DEGRADED** (fonctionne, intégration en mode ancien : plage
+`legacy`), **UNKNOWN** (aucune information, ou version hors de la plage d'un projet facultatif), **INCOMPATIBLE**
+(conflit déclaré, protocole d'interopérabilité refusé, dépendance obligatoire hors plage), **MISSING_REQUIRED**
+(dépendance obligatoire absente ou désactivée). Le pire état donne le résultat global.
+
+- **Avant la mise à jour**, le bouton « Mettre à jour » ouvre une page de confirmation : FreeScout, PHP, chaque projet
+  lié, protocole d'interopérabilité, puis « Mise à jour sûre », « Bloquée »… avec **Annuler la mise à jour** et, si
+  c'est permis, **Installer quand même** (case à cocher, enregistré en CRITICAL dans les journaux ;
+  `updateguard:update --override-compatibility` en ligne de commande).
+- **Pendant la mise à jour**, après le téléchargement et le SHA-256, le paquet est vérifié à nouveau. Sources, par
+  priorité : `interop.json` du paquet → `interop.json` publié à côté du ZIP de la release → `module.json` du paquet
+  (`compatibility`, et les anciens `requiredAppVersion`, `requiredPhpVersion`, `requires`) → métadonnées de la version
+  installée → inconnu.
+- **Règles** (Réglages › Règles de blocage) : un projet incompatible ou une dépendance obligatoire absente **bloque**
+  (interrupteur) ; « Installer quand même » permis (interrupteur, jamais pour une mise à jour automatique) ;
+  compatibilité inconnue : mise à jour automatique refusée (interrupteur, désactivé par défaut). DEGRADED ne bloque
+  pas. FreeScout ou PHP trop ancien bloque toujours.
+- **Règles d'urgence d'UpdateGuard** (`Config/compatibility_rules.php`) : une combinaison découverte incompatible après
+  la publication d'un module (sa release ne peut plus changer) peut être ajoutée par une version d'UpdateGuard ; elle
+  s'ajoute aux métadonnées du module comme conflit connu, sans les remplacer.
+- La fiche de chaque module affiche une section **Compatibilité des projets** (version installée, dernière version,
+  modules qui le déclarent) avec les liens vers les dépôts déclarés. Le résultat est enregistré dans le rapport de
+  chaque mise à jour.
+
 
 ## Security Gate (vérification de sécurité avant installation)
 
@@ -392,6 +433,52 @@ UpdateGuard works with any community module that follows FreeScout's own update 
    (`module.json`, ServiceProvider files, namespace, files listed in `module.json`), `php -l` on every PHP file,
    Laravel bootstrap with the new code, core FreeScout routes, your routes resolved to existing controllers and
    methods, Blade templates compiled and linted.
+
+### Project compatibility (`interop.json`)
+
+Declare how your module relates to other FreeScout modules. Never a hard dependency: UpdateGuard only checks what you
+declare, before installing your new version. Put `interop.json` at the root of your module (it is in your ZIP), and
+optionally next to the release ZIP (`releases/latest/download/interop.json`, or `"interopUrl"` in `module.json`) so
+that administrators see the result before downloading; list it in `SHA256SUMS`. The same keys in `module.json` work
+too.
+
+```json
+{
+    "project": {
+        "id": "refresh-global",
+        "name": "RefreshGlobal",
+        "repository": "https://github.com/00MY00/RefreshGlobal",
+        "interop_protocol": "1.2.0"
+    },
+    "compatibility": {
+        "freescout": ">=1.8.0",
+        "php": ">=7.1",
+        "projects": {
+            "refresh": {
+                "relationship": "optional_integration",
+                "required": false,
+                "name": "Refresh",
+                "repository": "https://github.com/altmenorg/freescout-refresh",
+                "supported_versions": ">=1.7.0 <2.0.0",
+                "interop_protocol": ">=1.0.0 <2.0.0",
+                "legacy": {"supported_versions": ">=1.5.0 <1.7.0", "mode": "degraded"},
+                "conflicts": [">=1.9.0 <=1.9.2"]
+            }
+        }
+    }
+}
+```
+
+- `project`: who your module is. `id` is stable (default: the module name in kebab-case, `RefreshGlobal` →
+  `refresh-global`); `interop_protocol` is the version of the API you offer to other modules.
+- Projects are found by their declared `id`, then by module alias, folder name or kebab-case name (`refresh`,
+  `workflow-packs`, `update-guard`); `"module": "Refresh"` names the folder explicitly.
+- `relationship`: `required_dependency`, `optional_integration`, `recommended_companion`, `conflict`,
+  `compatibility_tested`.
+- Ranges: `>=1.7.0 <2.0.0`, `1.9.0 - 1.9.2`, `^1.2`, `~1.2.3`, `1.9.x`, `*`, alternatives with `||`.
+- `interop_protocol` is compared when both sides declare it; `legacy.interop_protocol` gives DEGRADED instead of
+  INCOMPATIBLE.
+
 
 ### Hooks (no hard dependency)
 

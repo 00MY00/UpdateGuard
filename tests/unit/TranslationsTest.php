@@ -69,6 +69,17 @@ test('translations: every key used in the code exists', function () {
     foreach (['allowed', 'blocked', 'confirm', 'upload_consent', 'overridden'] as $x) {
         $used[] = 'sec_decision_'.$x;
     }
+    // project compatibility: relationships, states (Ui::compat), decisions
+    foreach (\Modules\UpdateGuard\Services\Compatibility\Metadata::RELATIONSHIPS as $x) {
+        $used[] = 'compat_rel_'.$x;
+    }
+    foreach (array_keys(\Modules\UpdateGuard\Services\Ui::COMPAT) as $x) {
+        $used[] = 'compat_state_'.strtolower(str_replace([' ', '_'], '', $x));
+    }
+    $used[] = 'compat_state_optional_absent';
+    foreach (['safe', 'degraded', 'unknown', 'blocked', 'overridden', 'not_blocked'] as $x) {
+        $used[] = 'compat_label_'.$x;
+    }
     $config = (function () use ($base) {
         if (!function_exists('env')) {
             function env($k, $d = null)

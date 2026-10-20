@@ -169,6 +169,14 @@ class ModuleDiscoveryService
                 }
             }
         }
+        // interop.json of the latest release (when published): compatibility shown BEFORE an update is started; the
+        // downloaded package is checked again before installation
+        $caps['compat_release'] = null;
+        $caps['compat_release_version'] = '';
+        if (!$self && !$official && $latest !== '' && VersionService::isNewer($latest, $module['version'])) {
+            $caps['compat_release'] = Compatibility\Compatibility::fetchReleaseInterop($m, $download);
+            $caps['compat_release_version'] = $caps['compat_release'] ? $latest : '';
+        }
         if ($self) {
             // integrity of its own files against the release + VirusTotal (SelfCheck): shown instead of an alert
             try {

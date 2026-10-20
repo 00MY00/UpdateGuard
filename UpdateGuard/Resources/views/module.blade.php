@@ -40,13 +40,12 @@
     @unless ($self)
     <div class="ug-toolbar">
         @if ($module->safety_level !== 'unsupported')
-            <form method="POST" action="{{ route('updateguard.module.update', ['name' => $module->name]) }}" class="ug-inline" data-ug-confirm="{{ __('updateguard::ug.confirm_update', ['module' => $module->name, 'from' => $module->installed_version, 'to' => $module->latest_version ?: '?']) }}">
-                {{ csrf_field() }}
-                <button type="submit" class="btn btn-primary" @if (!$module->updateAvailable() && $module->blocked_version === '') disabled @endif>↑ {{ __('updateguard::ug.update') }} {{ $module->latest_version }}</button>
-                @if ($module->blocked_version !== '' && $module->blocked_version === $module->latest_version)
-                    <label class="ug-force"><input type="checkbox" name="force" value="1"> {{ __('updateguard::ug.force_blocked') }}</label>
-                @endif
-            </form>
+            {{-- the confirmation page shows the compatibility checks first --}}
+            @if ($module->updateAvailable() || $module->blocked_version !== '')
+                <a class="btn btn-primary" href="{{ route('updateguard.module.update.confirm', ['name' => $module->name]) }}">↑ {{ __('updateguard::ug.update') }} {{ $module->latest_version }}</a>
+            @else
+                <button type="button" class="btn btn-primary" disabled>↑ {{ __('updateguard::ug.update') }} {{ $module->latest_version }}</button>
+            @endif
         @endif
         <form method="POST" action="{{ route('updateguard.module.check', ['name' => $module->name]) }}" class="ug-inline">
             {{ csrf_field() }}
@@ -165,6 +164,30 @@
             </table>
         </div>
     </div>
+
+    {{-- Project compatibility: what this module declares about other projects, and who declares it --}}
+    @if ($compat || $declaredBy)
+        <h3 id="ug-compat">{{ __('updateguard::ug.compat_title') }}</h3>
+        @if ($compat)
+            <h4>{{ $module->name }} {{ $module->installed_version }} <small>({{ __('updateguard::ug.installed') }})</small></h4>
+            @include('updateguard::partials.compatibility', ['c' => $compat])
+        @endif
+        @if ($compatLatest)
+            <h4>{{ $module->name }} {{ $module->latest_version }} <small>({{ __('updateguard::ug.latest') }})</small></h4>
+            @include('updateguard::partials.compatibility', ['c' => $compatLatest])
+        @endif
+        @if ($declaredBy)
+            <h4>{{ __('updateguard::ug.compat_declared_by', ['module' => $module->name]) }}</h4>
+            <ul class="ug-compat-declared">
+                @foreach ($declaredBy as $d)
+                    <li><a href="{{ route('updateguard.module', ['name' => $d['module']]) }}">{{ $d['module'] }} {{ $d['version'] }}</a>
+                        — {{ __('updateguard::ug.compat_rel_'.$d['project']['relationship']) }}
+                        @if ($d['project']['supported_versions'] !== '') · {{ $d['project']['supported_versions'] }}@endif
+                        {!! \Modules\UpdateGuard\Services\Ui::compat($d['project']['state'], $d['project']['relationship']) !!}</li>
+                @endforeach
+            </ul>
+        @endif
+    @endif
 
     @unless ($self)
     <h3>{{ __('updateguard::ug.sec_last_scan') }}</h3>

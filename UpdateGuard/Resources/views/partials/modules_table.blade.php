@@ -42,10 +42,7 @@
                         <a href="{{ \Modules\UpdateGuard\Services\Ui::freescoutModulesUrl() }}" class="btn btn-primary btn-sm" title="{{ __('updateguard::ug.self_update') }}">↑ {{ __('updateguard::ug.self_update_button') }}</a>
                     @endif
                 @elseif ($m->updateAvailable() && $m->safety_level !== 'unsupported' && $m->blocked_version !== $m->latest_version)
-                    <form method="POST" action="{{ route('updateguard.module.update', ['name' => $m->name]) }}" class="ug-inline" data-ug-confirm="{{ __('updateguard::ug.confirm_update', ['module' => $m->name, 'from' => $m->installed_version, 'to' => $m->latest_version]) }}">
-                        {{ csrf_field() }}
-                        <button type="submit" class="btn btn-primary btn-sm">↑ {{ __('updateguard::ug.update') }}</button>
-                    </form>
+                    <a class="btn btn-primary btn-sm" href="{{ route('updateguard.module.update.confirm', ['name' => $m->name]) }}">↑ {{ __('updateguard::ug.update') }}</a>
                 @endif
                 <div class="dropdown ug-inline">
                     <button type="button" class="btn btn-default btn-sm dropdown-toggle" data-toggle="dropdown" aria-label="{{ __('updateguard::ug.more') }}">⋮</button>

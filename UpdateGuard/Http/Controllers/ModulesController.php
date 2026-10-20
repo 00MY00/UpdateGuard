@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Modules\UpdateGuard\Entities\ModuleHealth;
 use Modules\UpdateGuard\Entities\UpdateBackup;
 use Modules\UpdateGuard\Entities\UpdateJob;
+use Modules\UpdateGuard\Services\Compatibility\Compatibility;
+use Modules\UpdateGuard\Services\Compatibility\CompatibilityChecker;
 use Modules\UpdateGuard\Services\ModuleDiscoveryService;
 
 class ModulesController extends BaseController
@@ -39,7 +41,23 @@ class ModulesController extends BaseController
 
         $trusts = \Modules\UpdateGuard\Entities\Trust::active()->where('module', $name)->orderBy('id', 'desc')->get();
 
-        return view('updateguard::module', compact('module', 'backups', 'jobs', 'pending', 'self', 'lastScan', 'trusts'));
+        // project compatibility: installed version, latest version (when newer), modules that declare this one
+        $installed = ModuleDiscoveryService::find($name);
+        $compat = $compatLatest = null;
+        $declaredBy = [];
+        if ($installed) {
+            try {
+                $compat = Compatibility::forInstalled($installed);
+                if ($module->updateAvailable() && !$self) {
+                    $compatLatest = Compatibility::preview($installed, $module);
+                }
+                $declaredBy = Compatibility::declaredBy($name);
+            } catch (\Throwable $e) {
+                // optional information: never breaks the page
+            }
+        }
+
+        return view('updateguard::module', compact('module', 'backups', 'jobs', 'pending', 'self', 'lastScan', 'trusts', 'compat', 'compatLatest', 'declaredBy'));
     }
 
     public function check($name)
@@ -47,6 +65,30 @@ class ModulesController extends BaseController
         $this->admin();
 
         return $this->queued($this->queue('check', $this->moduleName($name)));
+    }
+
+    /**
+     * Before an update: compatibility checks of the new version (release interop.json read by the last check, else
+     * the installed metadata), then Cancel / Update / Install anyway. The package is checked again after download.
+     */
+    public function confirmUpdate($name)
+    {
+        $this->admin();
+        $name = $this->moduleName($name);
+        if ($name === ModuleDiscoveryService::SELF) {
+            return redirect()->to(\Modules\UpdateGuard\Services\Ui::freescoutModulesUrl());
+        }
+        ModuleDiscoveryService::sync();
+        $module = ModuleHealth::named($name);
+        $installed = ModuleDiscoveryService::find($name);
+        if (!$module || !$installed) {
+            abort(404);
+        }
+        $compat = Compatibility::preview($installed, $module);
+        $compat['decision'] = CompatibilityChecker::decide($compat, Compatibility::settings(), false);
+        $pending = UpdateJob::pendingFor($name);
+
+        return view('updateguard::update_confirm', compact('module', 'compat', 'pending'));
     }
 
     public function update(Request $request, $name)
@@ -58,6 +100,17 @@ class ModulesController extends BaseController
         }
 
         $attributes = ['force' => (bool) $request->input('force')];
+        $decisions = [];
+        // "Install anyway" after a compatibility block: deliberate (checkbox), logged as CRITICAL, manual only
+        if ($request->input('compat_override')) {
+            if (!\Modules\UpdateGuard\Services\Settings::get('compat_allow_override') || !$request->input('understand')) {
+                return redirect()->back()->with('ug_error', __('updateguard::ug.compat_override_refused'));
+            }
+            $decisions[] = 'compat_override';
+            $user = auth()->user();
+            (new \Modules\UpdateGuard\Services\Journal('', $name, '', ''))->critical('compatibility',
+                'Compatibility override ("Install anyway") requested by '.($user->getFullName() ?: 'Administrator'));
+        }
         // "Install anyway" after a Security Gate block: deliberate action (checkbox + confirmation), logged, valid
         // only for the package that was scanned (same SHA-256)
         if ($request->input('override_report')) {
@@ -67,12 +120,16 @@ class ModulesController extends BaseController
                 || !$request->input('understand')) {
                 return redirect()->back()->with('ug_error', __('updateguard::ug.sec_override_refused'));
             }
-            $attributes['security_decision'] = 'override';
+            $decisions[] = 'override';
             $attributes['security_sha256'] = $report->sha256;
             $attributes['force'] = true;
             $user = auth()->user();
             (new \Modules\UpdateGuard\Services\Journal('', $name, $report->from_version, $report->to_version))->critical('security',
                 'Administrator override requested by '.$user->getFullName().' for a package classified '.$report->level.' ('.$report->score.'/100, SHA-256 '.$report->sha256.')');
+        }
+
+        if ($decisions) {
+            $attributes['security_decision'] = implode(',', $decisions);
         }
 
         return $this->queued($this->queue('update', $name, $attributes));

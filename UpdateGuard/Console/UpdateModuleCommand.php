@@ -14,6 +14,7 @@ use Modules\UpdateGuard\Services\UpdateRunner;
  *   --yes          continue after the security summary (warnings)
  *   --upload       send an unknown package to the external scanners      --skip-upload   do not send it
  *   --override     install a package blocked by the security policy (when overridable; logged as CRITICAL)
+ *   --override-compatibility   install although a related project is declared incompatible (logged as CRITICAL)
  * In an interactive terminal, the questions are asked instead.
  */
 class UpdateModuleCommand extends Command
@@ -26,7 +27,8 @@ class UpdateModuleCommand extends Command
         {--yes : continue after the security summary without asking}
         {--upload : allow uploading an unknown package to the external scanners}
         {--skip-upload : never upload the package}
-        {--override : install even if the security policy blocks it (when overridable)}';
+        {--override : install even if the security policy blocks it (when overridable)}
+        {--override-compatibility : install even if a related project is declared incompatible (when allowed in the settings)}';
 
     protected $description = 'UpdateGuard: safe update of a module (SHA-256, Security Gate, staging, backup, health check, automatic rollback)';
 
@@ -64,7 +66,7 @@ class UpdateModuleCommand extends Command
         }
         // decisions given in advance (apply to whatever package is downloaded: an explicit choice of the operator)
         $decisions = [];
-        foreach (['yes' => 'continue', 'upload' => 'upload', 'skip-upload' => 'skip_upload', 'override' => 'override'] as $option => $decision) {
+        foreach (['yes' => 'continue', 'upload' => 'upload', 'skip-upload' => 'skip_upload', 'override' => 'override', 'override-compatibility' => 'compat_override'] as $option => $decision) {
             if ($this->option($option)) {
                 $decisions[] = $decision;
             }
@@ -114,6 +116,14 @@ class UpdateModuleCommand extends Command
             $this->comment('Another operation holds the lock: '.$job->update_id.' stays queued for the scheduler.');
 
             return 0;
+        }
+        // compatibility checks of the new version (projects related to the module)
+        $report = \Modules\UpdateGuard\Services\ReportService::load(\Modules\UpdateGuard\Services\Paths::reports(), $job->update_id);
+        if (!empty($report['compatibility'])) {
+            $this->line(implode("\n", \Modules\UpdateGuard\Services\ReportService::compatibilityLines($report['compatibility'])));
+            if (($report['compatibility']['decision']['decision'] ?? '') === 'blocked' && !empty($report['compatibility']['decision']['overridable'])) {
+                $this->comment('Install anyway: run again with --override-compatibility (recorded in the logs).');
+            }
         }
         $this->line($job->update_id.' '.$job->status.': '.$job->message);
 

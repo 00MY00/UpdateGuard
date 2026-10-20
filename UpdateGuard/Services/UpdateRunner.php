@@ -451,6 +451,7 @@ class UpdateRunner
         $actual = ChecksumService::hashFile($zip);
         $this->zipHash = $actual;
         $expected = '';
+        $sumsText = '';
         if ($localSource) {
             if ((string) $job->sums_path !== '') {
                 $expected = ChecksumService::expectedFor((string) @file_get_contents($job->sums_path), basename($job->source_path));
@@ -460,7 +461,8 @@ class UpdateRunner
             }
         } elseif (!empty($caps['sums_url'])) {
             try {
-                $expected = ChecksumService::expectedFor($download->text($caps['sums_url']), DownloadService::zipName($module['manifest']));
+                $sumsText = $download->text($caps['sums_url']);
+                $expected = ChecksumService::expectedFor($sumsText, DownloadService::zipName($module['manifest']));
             } catch (\Throwable $e) {
                 $j->warning('verifying', 'SHA256SUMS not readable: '.$e->getMessage());
             }
@@ -538,12 +540,12 @@ class UpdateRunner
             $this->report['to'] = $to;
             $j->to = $to;
         }
-        $compat = $this->compatibility($newManifest);
-        if ($compat) {
-            ReportService::step($this->report, 'staging', 'FAIL', implode('; ', $compat));
+        // ------------------------------------------------------------------------------- project compatibility
+        // read from the verified package, before the Security Gate and before anything is changed
+        if (!$this->projectCompatibility($module, $staged, $newManifest, $to, $download, $localSource, $sumsText)) {
             $this->cleanWork();
 
-            return $this->finish('failed', 'ABORT: '.implode('; ', $compat));
+            return;
         }
         $added = MigrationDiff::added($module['path'], $staged);
         $kind = MigrationDiff::rollbackSafety($added, $newManifest);
@@ -747,26 +749,53 @@ class UpdateRunner
         return $problems;
     }
 
-    /** FreeScout / PHP version and dependencies required by the new version. */
-    protected function compatibility(array $manifest)
+    /**
+     * Project compatibility of the new version (FreeScout, PHP, related modules): Compatibility\*. Stored in the
+     * report; false when the update is blocked (the job is finished). An administrator override ("Install anyway",
+     * decision compat_override) is logged as CRITICAL; automatic updates are never overridden.
+     */
+    protected function projectCompatibility(array $module, $staged, array $newManifest, $to, DownloadService $download, $localSource, $sumsText)
     {
-        $problems = [];
-        $app = (string) config('app.version');
-        $required = (string) ($manifest['requiredAppVersion'] ?? '');
-        if ($required !== '' && $app !== '' && version_compare($app, $required, '<')) {
-            $problems[] = 'requires FreeScout '.$required.' (installed: '.$app.')';
+        $job = $this->job;
+        $j = $this->journal;
+        // interop.json published next to the release ZIP: read only when the package has none
+        $release = null;
+        if (!$localSource && Compatibility\Metadata::fromDir($staged, $newManifest)['source'] !== 'interop.json') {
+            $release = Compatibility\Compatibility::fetchReleaseInterop($module['manifest'], $download, (string) $sumsText);
         }
-        $php = (string) ($manifest['requiredPhpVersion'] ?? '');
-        if ($php !== '' && version_compare(PHP_VERSION, $php, '<')) {
-            $problems[] = 'requires PHP '.$php.' (installed: '.PHP_VERSION.')';
-        }
-        foreach ((array) ($manifest['requires'] ?? []) as $alias) {
-            if (is_string($alias) && $alias !== '' && !ModuleDiscoveryService::isActive($alias)) {
-                $problems[] = 'requires the module "'.$alias.'" (not active)';
+        $result = Compatibility\Compatibility::evaluate($module['name'], $to, Compatibility\Compatibility::packageSources($module, $staged, $newManifest, $release));
+        $decision = Compatibility\CompatibilityChecker::decide($result, Compatibility\Compatibility::settings(), (bool) $job->automatic,
+            in_array('compat_override', $job->decisions(), true));
+        $result['decision'] = $decision;
+        $this->report['compatibility'] = $result;
+        foreach ($result['platform'] as $p) {
+            if ($p['result'] === 'FAIL') {
+                $j->error('compatibility', 'Requires '.$p['name'].' '.$p['required'].' (installed: '.$p['installed'].')');
             }
         }
+        foreach ($result['projects'] as $p) {
+            $level = in_array($p['state'], ['INCOMPATIBLE', 'MISSING_REQUIRED'], true) ? 'error' : (in_array($p['state'], ['DEGRADED', 'UNKNOWN'], true) ? 'warning' : 'info');
+            $j->{$level}('compatibility', $p['name'].': '.$p['state'].' — '.$p['reason']);
+        }
+        foreach ((array) $result['errors'] as $error) {
+            $j->warning('compatibility', 'Compatibility metadata: '.$error);
+        }
+        $summary = $result['overall'].($result['source'] !== '' ? ' ('.$result['source'].')' : ' (no compatibility metadata)');
+        if ($decision['decision'] === 'blocked') {
+            ReportService::step($this->report, 'compatibility', 'FAIL', $summary);
+            $j->error('compatibility', 'Update blocked by the project compatibility: '.implode('; ', $decision['reasons']));
+            $this->finish('blocked', 'compatibility: '.implode('; ', $decision['reasons']));
 
-        return $problems;
+            return false;
+        }
+        if ($decision['overridden']) {
+            ReportService::step($this->report, 'compatibility', 'OVERRIDDEN', $summary);
+            $j->critical('compatibility', 'Compatibility override ("Install anyway") by '.$job->triggered_by.': '.implode('; ', $decision['reasons']));
+        } else {
+            ReportService::step($this->report, 'compatibility', in_array($result['overall'], ['COMPATIBLE'], true) ? 'PASS' : 'WARNING', $summary);
+        }
+
+        return true;
     }
 
     /** Native health check + generic validation; fills the report; returns the failure causes. */

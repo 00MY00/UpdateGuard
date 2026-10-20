@@ -61,6 +61,10 @@ return [
         'sec_auto_block_migrations'      => true,   // automatic update: refused when it brings database migrations
         'sec_auto_block_republished'     => true,   // automatic update: refused for a version republished with another SHA-256
         'sec_allow_override'             => true,
+        // project compatibility (interop.json / module.json of the new version, Services/Compatibility)
+        'compat_block_incompatible'      => true,   // an incompatible related project / missing required dependency blocks
+        'compat_allow_override'          => true,   // manual update: "Install anyway" after a compatibility block
+        'compat_block_unknown_auto'      => false,  // automatic update: refused when the compatibility is unknown
         'sec_allow_trust'                => true,   // administrators may trust reported behaviours of a module
         'sec_save_reports'               => true,
         'sec_confirm'                    => 'warnings', // never | warnings | always (manual updates)

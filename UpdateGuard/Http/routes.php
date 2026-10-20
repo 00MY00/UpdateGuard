@@ -19,6 +19,7 @@ Route::group([
     Route::get('/modules/{name}', $admins + ['uses' => 'ModulesController@show'])->where('name', '[A-Za-z0-9_\-]+')->name('updateguard.module');
     Route::post('/modules/{name}/check', $admins + ['uses' => 'ModulesController@check'])->where('name', '[A-Za-z0-9_\-]+')->name('updateguard.module.check');
     Route::post('/modules/{name}/update', $admins + ['uses' => 'ModulesController@update'])->where('name', '[A-Za-z0-9_\-]+')->name('updateguard.module.update');
+    Route::get('/modules/{name}/update', $admins + ['uses' => 'ModulesController@confirmUpdate'])->where('name', '[A-Za-z0-9_-]+')->name('updateguard.module.update.confirm');
     Route::post('/modules/{name}/health', $admins + ['uses' => 'ModulesController@health'])->where('name', '[A-Za-z0-9_\-]+')->name('updateguard.module.health');
     Route::post('/modules/{name}/auto', $admins + ['uses' => 'ModulesController@auto'])->where('name', '[A-Za-z0-9_\-]+')->name('updateguard.module.auto');
     Route::post('/modules/{name}/unblock', $admins + ['uses' => 'ModulesController@unblock'])->where('name', '[A-Za-z0-9_\-]+')->name('updateguard.module.unblock');

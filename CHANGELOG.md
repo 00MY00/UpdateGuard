@@ -3,6 +3,32 @@
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions [SemVer](https://semver.org/lang/fr/).
 La version du module est celle de `UpdateGuard/module.json`.
 
+## [1.10.0] - 2026-10-20
+
+### Ajouté
+- **Compatibilité des projets** : un module déclare ses relations avec d'autres modules FreeScout dans un
+  `interop.json` (ou son `module.json`) : dépendance obligatoire, intégration facultative, module recommandé, conflit,
+  compatibilité testée ; versions prises en charge (plages semver), protocole d'interopérabilité, plage ancienne
+  (mode dégradé), conflits connus, lien vers le dépôt. Jamais une dépendance imposée.
+- États : COMPATIBLE, DEGRADED, UNKNOWN, INCOMPATIBLE, MISSING_REQUIRED ; un projet facultatif absent est
+  « OPTIONAL / NOT INSTALLED » et ne bloque pas.
+- Vérifiée **avant l'installation**, après le téléchargement et le SHA-256 du paquet. Sources, par priorité :
+  `interop.json` du paquet, `interop.json` de la release, `module.json` du paquet, version installée. Un projet
+  incompatible ou une dépendance obligatoire absente bloque la mise à jour (réglable).
+- **Page de confirmation** avant chaque mise à jour : FreeScout, PHP, projets liés, protocole, résultat (« Mise à
+  jour sûre », « Bloquée »…), avec « Annuler la mise à jour » et « Installer quand même » (case à cocher, enregistré
+  en CRITICAL ; `updateguard:update --override-compatibility`).
+- Section **Compatibilité des projets** sur la fiche de chaque module (version installée, dernière version, modules
+  qui le déclarent) ; résultat enregistré dans le rapport de mise à jour et affiché par `updateguard:update`.
+- Réglages › Règles de blocage : bloquer un projet incompatible, permettre « Installer quand même », refuser une
+  mise à jour automatique dont la compatibilité est inconnue.
+- Règles d'urgence d'UpdateGuard (`Config/compatibility_rules.php`) pour une combinaison découverte incompatible
+  après la publication d'un module.
+
+### Modifié
+- Les anciennes vérifications `requiredAppVersion`, `requiredPhpVersion` et `requires` font partie de la
+  compatibilité des projets (même effet, résultat détaillé dans le rapport).
+
 ## [1.9.0] - 2026-10-19
 
 ### Ajouté

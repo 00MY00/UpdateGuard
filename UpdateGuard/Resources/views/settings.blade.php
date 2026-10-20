@@ -110,6 +110,7 @@
                 {!! $number('sec_score_threshold', '/ 100', 1, 100, ['security_gate', 'sec_block_score']) !!}
                 {!! $check('sec_block_external', ['security_gate', 'vt_enabled']) !!}
                 {!! $check('sec_block_external_unavailable', ['security_gate', 'vt_enabled']) !!}
+                {!! $check('compat_block_incompatible') !!}
             </div>
 
             <h4>{{ __('updateguard::ug.blocking_manual') }}</h4>
@@ -118,6 +119,7 @@
                 {!! $select('sec_confirm', 'security_gate') !!}
                 {!! $check('sec_allow_override', 'security_gate') !!}
                 {!! $check('sec_allow_trust', 'security_gate') !!}
+                {!! $check('compat_allow_override', 'compat_block_incompatible') !!}
                 {!! $check('vt_ask_upload', ['security_gate', 'vt_enabled']) !!}
                 {!! $check('vt_auto_upload', ['security_gate', 'vt_enabled']) !!}
             </div>
@@ -130,6 +132,7 @@
                 {!! $check('sec_auto_require_known', ['auto_update', 'security_gate', 'vt_enabled']) !!}
                 {!! $check('sec_auto_block_migrations', 'auto_update') !!}
                 {!! $check('sec_auto_block_republished', 'auto_update') !!}
+                {!! $check('compat_block_unknown_auto', 'auto_update') !!}
             </div>
         </fieldset>
 

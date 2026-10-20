@@ -19,6 +19,22 @@
                 </form>
             @endif
         </div>
+        @if (!empty($report['compatibility']['platform']))
+            <h3>{{ __('updateguard::ug.compat_checks') }}</h3>
+            @include('updateguard::partials.compatibility', ['c' => $report['compatibility']])
+            @php $cd = $report['compatibility']['decision'] ?? []; @endphp
+            @if ($job && $job->status === 'blocked' && ($cd['decision'] ?? '') === 'blocked' && !empty($cd['overridable'])
+                && !\Modules\UpdateGuard\Entities\UpdateJob::pendingFor($job->module))
+                {{-- blocked by the compatibility: the administrator may install anyway (logged as CRITICAL) --}}
+                <form method="POST" action="{{ route('updateguard.module.update', ['name' => $job->module]) }}" class="ug-override"
+                      data-ug-confirm="{{ __('updateguard::ug.compat_override_confirm') }}">
+                    {{ csrf_field() }}
+                    <input type="hidden" name="compat_override" value="1">
+                    <label><input type="checkbox" name="understand" value="1" required> {{ __('updateguard::ug.compat_override_understand') }}</label>
+                    <button type="submit" class="btn btn-danger btn-sm">{{ __('updateguard::ug.compat_install_anyway') }}</button>
+                </form>
+            @endif
+        @endif
         <pre class="ug-report">{{ \Modules\UpdateGuard\Services\ReportService::toText($report) }}</pre>
         @if (!empty($report['native_health']['json']))
             <details>
