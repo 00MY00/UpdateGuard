@@ -3,6 +3,12 @@
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions [SemVer](https://semver.org/lang/fr/).
 La version du module est celle de `UpdateGuard/module.json`.
 
+## [Non publié]
+
+### Corrigé
+
+- Le retour arrière reconstruisait le cache de configuration avec le pilote de session pris dans l'environnement du processus (`database`), alors que la table `sessions` n'existe pas. Le site répondait 500, le contrôle de santé du module restant réussi. Les commandes `artisan` lancées par Update Guard gardent le pilote et le nom de cookie déjà en service. Sans table `sessions`, le pilote reste `file`.
+
 ## [1.10.0] - 2026-10-20
 
 ### Ajouté
