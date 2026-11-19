@@ -59,9 +59,9 @@
 
     <div class="ug-meta">
         <div><strong>{{ __('updateguard::ug.last_update') }}:</strong>
-            @if ($lastUpdate) {{ $lastUpdate->module }} {{ $lastUpdate->from_version }} → {{ $lastUpdate->to_version }} ({{ $lastUpdate->finished_at }}) @else — @endif</div>
+            @if ($lastUpdate) {{ $lastUpdate->module }} {{ $lastUpdate->from_version }} → {{ $lastUpdate->to_version }} ({{ \Modules\UpdateGuard\Services\Ui::date($lastUpdate->finished_at) }}) @else — @endif</div>
         <div><strong>{{ __('updateguard::ug.last_rollback') }}:</strong>
-            @if ($lastRollback) ↺ {{ $lastRollback->module }} {{ $lastRollback->to_version }} → {{ $lastRollback->from_version }} ({{ $lastRollback->finished_at }}) @else — @endif</div>
+            @if ($lastRollback) ↺ {{ $lastRollback->module }} {{ $lastRollback->to_version }} → {{ $lastRollback->from_version }} ({{ \Modules\UpdateGuard\Services\Ui::date($lastRollback->finished_at) }}) @else — @endif</div>
     </div>
 
     @php $unknownVt = \Modules\UpdateGuard\Services\Ui::unknownToScanners(); @endphp
@@ -74,7 +74,7 @@
                 <ul class="ug-unknown-list">
                     @foreach ($unknownVt as $r)
                         <li>
-                            <span><strong>{{ $r->module }}</strong> {{ $r->to_version }} <small class="text-help">· {{ $r->created_at }} · <a href="{{ route('updateguard.security.show', ['id' => $r->id]) }}">{{ __('updateguard::ug.view_report') }}</a></small></span>
+                            <span><strong>{{ $r->module }}</strong> {{ $r->to_version }} <small class="text-help">· {{ \Modules\UpdateGuard\Services\Ui::date($r->created_at) }} · <a href="{{ route('updateguard.security.show', ['id' => $r->id]) }}">{{ __('updateguard::ug.view_report') }}</a></small></span>
                             <form method="POST" action="{{ route('updateguard.security.upload', ['id' => $r->id]) }}" class="ug-inline" data-ug-confirm="{{ __('updateguard::ug.sec_upload_text') }}">
                                 {{ csrf_field() }}
                                 <button type="submit" class="btn btn-default btn-sm">{{ __('updateguard::ug.sec_upload_and_scan') }}</button>

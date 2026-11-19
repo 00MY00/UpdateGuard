@@ -59,7 +59,7 @@
                 <input type="time" class="form-control" id="ug-check_time" name="check_time" value="{{ $s['check_time'] }}">
             </div>
             {!! $check('auto_update', 'enabled') !!}
-            <p class="text-help">{{ __('updateguard::ug.scheduler') }}: {{ $lastRun ?: __('updateguard::ug.never') }} — <code>* * * * * php artisan schedule:run</code></p>
+            <p class="text-help">{{ __('updateguard::ug.scheduler') }}: {{ \Modules\UpdateGuard\Services\Ui::date($lastRun) ?: __('updateguard::ug.never') }} — <code>* * * * * php artisan schedule:run</code></p>
         </fieldset>
 
         <fieldset id="ug-security">

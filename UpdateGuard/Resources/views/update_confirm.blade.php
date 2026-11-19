@@ -1,6 +1,9 @@
 @extends('updateguard::layout')
 
 {{-- Before an update: project compatibility of the new version, then Cancel / Update / Install anyway --}}
+{{-- parent page of the "Back" button (escaped by @section) --}}
+@section('ug_back', route('updateguard.module', ['name' => $module->name]))
+
 @section('ug_content')
     @php $blocked = $compat['decision']['decision'] === 'blocked'; @endphp
     <h2 class="ug-title">{{ __('updateguard::ug.compat_confirm_title', ['module' => $module->name]) }}

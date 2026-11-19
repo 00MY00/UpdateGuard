@@ -38,7 +38,7 @@
         <tbody>
         @forelse ($reports as $r)
             <tr>
-                <td class="ug-card-title"><a href="{{ route('updateguard.security.show', ['id' => $r->id]) }}">{{ $r->created_at }}</a></td>
+                <td class="ug-card-title"><a href="{{ route('updateguard.security.show', ['id' => $r->id]) }}">{{ \Modules\UpdateGuard\Services\Ui::date($r->created_at) }}</a></td>
                 <td data-label="{{ __('updateguard::ug.module') }}">{{ $r->module }}</td>
                 <td data-label="{{ __('updateguard::ug.version') }}">{{ $r->from_version }}@if ($r->to_version !== '' && $r->to_version !== $r->from_version) → {{ $r->to_version }}@endif</td>
                 <td data-label="{{ __('updateguard::ug.sec_integrity') }}">{!! \Modules\UpdateGuard\Services\Ui::secStatus($r->integrity) !!}</td>

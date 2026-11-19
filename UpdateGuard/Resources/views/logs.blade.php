@@ -38,7 +38,7 @@
     <div class="ug-log">
         @forelse ($logs as $log)
             <div class="ug-log-line ug-level-{{ strtolower($log->level) }}">
-                <span class="ug-log-time">{{ $log->created_at }}</span>
+                <span class="ug-log-time">{{ \Modules\UpdateGuard\Services\Ui::date($log->created_at) }}</span>
                 <span class="ug-log-level">{{ $log->level }}</span>
                 <span class="ug-log-module">{{ $log->module ?: '—' }}</span>
                 <span class="ug-log-message">{{ $log->message }}</span>

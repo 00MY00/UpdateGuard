@@ -5,7 +5,7 @@
 <p class="ug-last-check text-help">
     {{ __('updateguard::ug.last_full_check') }}:
     @if ($lastCheck)
-        {{ $lastCheck->diffForHumans() }} <small>({{ $lastCheck }})</small>
+        {{ $lastCheck->diffForHumans() }} <small>({{ \Modules\UpdateGuard\Services\Ui::date($lastCheck) }})</small>
     @else
         {{ __('updateguard::ug.never') }}
     @endif

@@ -9,6 +9,55 @@
         }
     });
 
+    /*
+     * "← Back": the previous UpdateGuard page of this tab that is not the current one. An action sent from a page
+     * comes back to the same page (POST then redirect) and a finished operation reloads it: the browser history then
+     * holds the same page several times and its own Back button goes through each copy. Each page notes its place in
+     * the history (history.state) and its path (sessionStorage); the button jumps over the copies. Without that
+     * information (new tab, page opened from elsewhere, storage blocked) the link leads to the parent page.
+     */
+    var NAV = 'ug-nav';
+    function navLog() {
+        try {
+            return JSON.parse(window.sessionStorage.getItem(NAV)) || {};
+        } catch (e) {
+            return {};
+        }
+    }
+    var navPos = (function () {
+        var state = window.history.state || {}, known = typeof state.ugPos === 'number';
+        var pos = known ? state.ugPos : window.history.length;
+        try {
+            if (!known) {
+                window.history.replaceState($.extend({}, state, { ugPos: pos }), '', window.location.href);
+            }
+            var log = navLog();
+            if (!known) {
+                // a new page after going back: the pages that were after it are no longer in the history
+                Object.keys(log).forEach(function (p) { if (+p > pos) { delete log[p]; } });
+            }
+            log[pos] = window.location.pathname;
+            window.sessionStorage.setItem(NAV, JSON.stringify(log));
+        } catch (e) {
+            return null;
+        }
+        return pos;
+    })();
+    $(document).on('click', 'a[data-ug-back]', function (e) {
+        if (navPos === null) {
+            return;
+        }
+        var log = navLog(), here = window.location.pathname;
+        for (var p = navPos - 1; p >= 1 && log[p]; p--) {
+            if (log[p] !== here) {
+                e.preventDefault();
+                window.history.go(p - navPos);
+                return;
+            }
+        }
+        // no other UpdateGuard page before this one in the tab: the parent page (normal link)
+    });
+
     // menu entries that must POST (CSRF form of the page)
     $(document).on('click', 'a[data-ug-post]', function (e) {
         e.preventDefault();

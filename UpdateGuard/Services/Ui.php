@@ -175,6 +175,32 @@ class Ui
         return $row->health_status ?: 'unknown';
     }
 
+    /**
+     * Date and time in the format of the language (translation "date_format": French 19/11/2026 14:05, German
+     * 19.11.2026 14:05…, 24-hour clock). Carbon, DateTime, string or timestamp; '' when empty or unreadable.
+     */
+    public static function date($value)
+    {
+        if ($value === null || $value === '' || $value === 0) {
+            return '';
+        }
+        try {
+            if ($value instanceof \DateTimeInterface) {
+                $time = $value->getTimestamp();
+            } else {
+                $time = is_numeric($value) ? (int) $value : strtotime((string) $value);
+            }
+        } catch (\Throwable $e) {
+            $time = false;
+        }
+        if (!$time) {
+            return (string) $value;
+        }
+        $format = __('updateguard::ug.date_format');
+
+        return date($format !== 'updateguard::ug.date_format' && $format !== '' ? $format : 'Y-m-d H:i', $time);
+    }
+
     public static function size($bytes)
     {
         $bytes = (int) $bytes;

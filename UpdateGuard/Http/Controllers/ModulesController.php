@@ -131,8 +131,14 @@ class ModulesController extends BaseController
         if ($decisions) {
             $attributes['security_decision'] = implode(',', $decisions);
         }
+        $job = $this->queue('update', $name, $attributes);
+        if (!$job) {
+            return $this->queued(null);
+        }
 
-        return $this->queued($this->queue('update', $name, $attributes));
+        // followed on the module page: the confirmation page (or report) is not a page to come back to
+        return redirect()->route('updateguard.module', ['name' => $name])->with('ug_job', $job->id)
+            ->with('ug_success', __('updateguard::ug.queued', ['id' => $job->update_id]));
     }
 
     public function health($name)

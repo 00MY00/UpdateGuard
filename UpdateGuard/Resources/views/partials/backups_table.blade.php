@@ -17,7 +17,7 @@
             <td class="ug-card-title">{{ $b->module }}</td>
             <td data-label="{{ __('updateguard::ug.version') }}">{{ $b->version }}
                 @if (isset($installed[$b->module]) && $installed[$b->module] !== '')<small class="text-help">({{ __('updateguard::ug.current') }} {{ $installed[$b->module] }})</small>@endif</td>
-            <td data-label="{{ __('updateguard::ug.date') }}">{{ $b->created_at }}</td>
+            <td data-label="{{ __('updateguard::ug.date') }}">{{ \Modules\UpdateGuard\Services\Ui::date($b->created_at) }}</td>
             <td data-label="{{ __('updateguard::ug.size') }}">{{ \Modules\UpdateGuard\Services\Ui::size($b->size) }}</td>
             <td data-label="{{ __('updateguard::ug.health') }}">{!! \Modules\UpdateGuard\Services\Ui::badge($b->health_status) !!}</td>
             <td data-label="{{ __('updateguard::ug.backup_reason') }}">{{ __('updateguard::ug.reason_'.$b->reason) }}</td>

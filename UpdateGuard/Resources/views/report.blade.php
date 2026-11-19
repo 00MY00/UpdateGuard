@@ -1,5 +1,8 @@
 @extends('updateguard::layout')
 
+{{-- parent page of the "Back" button (escaped by @section) --}}
+@section('ug_back', route('updateguard.logs'))
+
 @section('ug_content')
     <h2 class="ug-title">{{ $updateId }}
         @if ($job) {!! \Modules\UpdateGuard\Services\Ui::badge($job->status) !!} @endif
@@ -45,7 +48,7 @@
     @else
         <p class="text-help">{{ __('updateguard::ug.no_report') }}</p>
         @foreach ($logs as $log)
-            <div>{{ $log->created_at }} {{ $log->level }} {{ $log->message }}</div>
+            <div>{{ \Modules\UpdateGuard\Services\Ui::date($log->created_at) }} {{ $log->level }} {{ $log->message }}</div>
         @endforeach
     @endif
 @endsection

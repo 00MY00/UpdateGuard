@@ -13,7 +13,20 @@
 @section('content')
 <div class="container ug-page @if (\Modules\UpdateGuard\Services\Ui::refreshActive()) ug-refresh @endif">
     <div class="ug-header">
-        <h1>{{ __('updateguard::ug.title') }}</h1>
+        {{-- "← Back": previous UpdateGuard page of this tab, copies skipped (updateguard.js), else the parent page
+             given by the view (@section('ug_back', url)); "⌂ Home": the dashboard, from anywhere in one click --}}
+        @php $ugBack = trim($__env->yieldContent('ug_back')); @endphp
+        <div class="ug-titlebar">
+            <h1>{{ __('updateguard::ug.title') }}</h1>
+            <div class="ug-nav">
+                @if ($ugBack !== '')
+                    <a class="btn btn-default btn-sm ug-nav-back" href="{!! $ugBack !!}" data-ug-back>← {{ __('updateguard::ug.nav_back') }}</a>
+                @endif
+                @unless (Route::is('updateguard.dashboard'))
+                    <a class="btn btn-default btn-sm ug-nav-home" href="{{ route('updateguard.dashboard') }}" title="{{ __('updateguard::ug.dashboard') }}">⌂ {{ __('updateguard::ug.nav_home') }}</a>
+                @endunless
+            </div>
+        </div>
         <ul class="nav nav-tabs ug-tabs">
             <li class="{{ Route::is('updateguard.dashboard') ? 'active' : '' }}"><a href="{{ route('updateguard.dashboard') }}">{{ __('updateguard::ug.dashboard') }}</a></li>
             <li class="{{ Route::is('updateguard.module*') ? 'active' : '' }}"><a href="{{ route('updateguard.modules') }}">{{ __('updateguard::ug.modules') }}</a></li>

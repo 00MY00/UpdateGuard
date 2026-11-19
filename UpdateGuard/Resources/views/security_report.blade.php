@@ -15,6 +15,9 @@
     $decision = $report['decision'] ?? '';
 @endphp
 
+{{-- parent page of the "Back" button (escaped by @section) --}}
+@section('ug_back', route('updateguard.security'))
+
 @section('ug_content')
     <h2 class="ug-title">{{ __('updateguard::ug.sec_verification') }} — {{ $row->module }}
         <small>{{ $row->from_version }}@if ($row->to_version !== '' && $row->to_version !== $row->from_version) → {{ $row->to_version }}@endif</small></h2>

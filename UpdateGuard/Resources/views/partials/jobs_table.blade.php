@@ -20,7 +20,7 @@
             <td data-label="{{ __('updateguard::ug.status') }}">{!! \Modules\UpdateGuard\Services\Ui::badge($job->status) !!}
                 @if ($job->message)<br><small class="text-help">{{ \Illuminate\Support\Str::limit($job->message, 160) }}</small>@endif</td>
             <td data-label="{{ __('updateguard::ug.triggered_by') }}">{{ $job->triggered_by }} · {{ $job->automatic ? __('updateguard::ug.automatic') : __('updateguard::ug.manual') }}</td>
-            <td data-label="{{ __('updateguard::ug.date') }}">{{ $job->created_at }}</td>
+            <td data-label="{{ __('updateguard::ug.date') }}">{{ \Modules\UpdateGuard\Services\Ui::date($job->created_at) }}</td>
         </tr>
     @empty
         <tr><td colspan="7" class="text-help">{{ __('updateguard::ug.no_operation') }}</td></tr>

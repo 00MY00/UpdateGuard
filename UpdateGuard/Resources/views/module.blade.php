@@ -1,5 +1,8 @@
 @extends('updateguard::layout')
 
+{{-- parent page of the "Back" button (escaped by @section) --}}
+@section('ug_back', route('updateguard.modules'))
+
 @section('ug_content')
     @php
         $caps = $module->capabilities();
@@ -119,7 +122,7 @@
                         @endif
                     @endif
                 </td></tr>
-                <tr><th>{{ __('updateguard::ug.last_check') }}</th><td>{{ !empty($check['at']) ? date('Y-m-d H:i', strtotime($check['at'])) : '—' }}</td></tr>
+                <tr><th>{{ __('updateguard::ug.last_check') }}</th><td>{{ !empty($check['at']) ? \Modules\UpdateGuard\Services\Ui::date($check['at']) : '—' }}</td></tr>
             </table>
         @endif
     @endif
@@ -146,10 +149,10 @@
                 <tr><th>{{ __('updateguard::ug.latest') }}</th><td>{{ $module->latest_version ?: '—' }}</td></tr>
                 <tr><th>{{ __('updateguard::ug.known_good') }}</th><td>{{ $module->known_good_version ?: '—' }}</td></tr>
                 <tr><th>{{ __('updateguard::ug.current_state') }}</th><td>{!! $Ui::badge($module->state) !!}</td></tr>
-                <tr><th>{{ __('updateguard::ug.health') }}</th><td>{!! $Ui::badge($module->health_status) !!} <small class="text-help">{{ $module->health_checked_at ?: '' }}</small></td></tr>
-                <tr><th>{{ __('updateguard::ug.last_check') }}</th><td>{{ $module->last_check_at ?: '—' }}</td></tr>
-                <tr><th>{{ __('updateguard::ug.last_update') }}</th><td>{{ $module->last_update_at ?: '—' }}</td></tr>
-                <tr><th>{{ __('updateguard::ug.last_backup') }}</th><td>{{ $module->last_backup_at ?: '—' }}</td></tr>
+                <tr><th>{{ __('updateguard::ug.health') }}</th><td>{!! $Ui::badge($module->health_status) !!} <small class="text-help">{{ \Modules\UpdateGuard\Services\Ui::date($module->health_checked_at) }}</small></td></tr>
+                <tr><th>{{ __('updateguard::ug.last_check') }}</th><td>{{ \Modules\UpdateGuard\Services\Ui::date($module->last_check_at) ?: '—' }}</td></tr>
+                <tr><th>{{ __('updateguard::ug.last_update') }}</th><td>{{ \Modules\UpdateGuard\Services\Ui::date($module->last_update_at) ?: '—' }}</td></tr>
+                <tr><th>{{ __('updateguard::ug.last_backup') }}</th><td>{{ \Modules\UpdateGuard\Services\Ui::date($module->last_backup_at) ?: '—' }}</td></tr>
                 @unless ($self)
                 <tr><th>{{ __('updateguard::ug.auto_update') }}</th><td>
                     <form method="POST" action="{{ route('updateguard.module.auto', ['name' => $module->name]) }}" class="ug-inline">
@@ -193,7 +196,7 @@
     <h3>{{ __('updateguard::ug.sec_last_scan') }}</h3>
     @if ($lastScan)
         <p>{!! $Ui::risk($lastScan->score, $lastScan->level) !!}
-            {{ $lastScan->created_at }} · {{ __('updateguard::ug.sec_decision_'.$lastScan->decision) }}
+            {{ \Modules\UpdateGuard\Services\Ui::date($lastScan->created_at) }} · {{ __('updateguard::ug.sec_decision_'.$lastScan->decision) }}
             · <a href="{{ route('updateguard.security.show', ['id' => $lastScan->id]) }}">{{ __('updateguard::ug.view_report') }}</a></p>
         @if (\Modules\UpdateGuard\Services\Settings::get('vt_enabled') && $Ui::isUnknownToScanners($lastScan))
             <div class="alert alert-info">
@@ -223,7 +226,7 @@
                 <tr>
                     <td class="ug-card-title">[{{ $t->severity }}] {{ $t->message }}@if ($t->file !== '')<br><small class="text-help">{{ $t->file }}</small>@endif</td>
                     <td data-label="{{ __('updateguard::ug.trust_reason') }}">{{ $t->reason }}</td>
-                    <td data-label="{{ __('updateguard::ug.trust_by') }}">{{ $t->user_name }} · {{ $t->created_at }} · {{ $t->version }}</td>
+                    <td data-label="{{ __('updateguard::ug.trust_by') }}">{{ $t->user_name }} · {{ \Modules\UpdateGuard\Services\Ui::date($t->created_at) }} · {{ $t->version }}</td>
                     <td class="ug-actions">
                         <form method="POST" action="{{ route('updateguard.trust.revoke', ['id' => $t->id]) }}" class="ug-inline" data-ug-confirm="{{ __('updateguard::ug.trust_revoke_confirm') }}">
                             {{ csrf_field() }}

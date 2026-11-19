@@ -450,6 +450,22 @@ expect "module page: Project compatibility section" grep -qE '^/modules/UgTestMo
 expect "update confirmation page answers (200 or redirect when up to date)" grep -qE '^/modules/UgTestModule/update (200|302)' /tmp/ug-compat.txt
 expect "UpdateGuard page lists the modules that declare it" grep -qE '^/modules/UpdateGuard 200 [1-9]' /tmp/ug-compat.txt
 
+log "Navigation (Back / Home buttons) and dates in the format of the language"
+dates="$(php_app 'foreach (["fr", "de", "en"] as $l) { app()->setLocale($l); echo $l, "=", Modules\UpdateGuard\Services\Ui::date("2026-11-19 14:05:33"), ";"; } echo Modules\UpdateGuard\Services\Ui::date(null), "|";')"
+expect "dates: French 19/11/2026 14:05, German 19.11.2026 14:05, English ISO ($dates)" test "$dates" = "fr=19/11/2026 14:05;de=19.11.2026 14:05;en=2026-11-19 14:05;|"
+: > /tmp/ug-nav.txt
+for page in "" /modules/UgTestModule /logs; do
+    php_app '
+$kernel = app(Illuminate\Contracts\Http\Kernel::class);
+auth()->guard()->setUser(\App\User::where("role", \App\User::ROLE_ADMIN)->first());
+$html = (string) $kernel->handle(Illuminate\Http\Request::create("http://localhost/update-guard'"$page"'", "GET"))->getContent();
+echo "'"$page"'", " back=", substr_count($html, "data-ug-back"), " home=", substr_count($html, "ug-nav-home"), "\n";' >> /tmp/ug-nav.txt 2>&1 || true
+done
+cat /tmp/ug-nav.txt
+expect "dashboard: no Back, no Home (it is the home)" grep -qx ' back=0 home=0' /tmp/ug-nav.txt
+expect "module page: Back (to Modules) and Home" grep -qx '/modules/UgTestModule back=1 home=1' /tmp/ug-nav.txt
+expect "a tab (Logs): Home only" grep -qx '/logs back=0 home=1' /tmp/ug-nav.txt
+
 log "Versions"
 docker exec -w /var/www/html "$APP" sh -c 'php -r "echo \"PHP \".PHP_VERSION.PHP_EOL;"; php artisan --version'
 

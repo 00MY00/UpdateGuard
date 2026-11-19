@@ -3,6 +3,22 @@
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions [SemVer](https://semver.org/lang/fr/).
 La version du module est celle de `UpdateGuard/module.json`.
 
+## [1.11.0] - 2026-11-19
+
+### Ajouté
+- Bouton **⌂ Accueil** en haut de chaque page (sauf le tableau de bord) : retour au tableau de bord en un clic.
+- Bouton **← Retour** sur les pages de détail (fiche d'un module, confirmation de mise à jour, rapport, rapport de
+  sécurité, confirmation de restauration) : il revient à la page précédente **différente**, en sautant les copies
+  que laissent dans l'historique les actions (vérifier, analyser…) et les rechargements automatiques. Sans
+  historique (nouvel onglet), il mène à la page parente. Le bouton Retour du navigateur fonctionne comme avant.
+
+### Modifié
+- Dates et heures au format de la langue : français 19/11/2026 14:05, allemand 19.11.2026 14:05, etc. (24 h) ;
+  anglais au format ISO.
+- Après avoir lancé une mise à jour, la fiche du module s'ouvre avec la progression (au lieu de rester sur la page de
+  confirmation).
+- Texte de confirmation de l'ancienne fenêtre « Mettre à jour ? » retiré (remplacé par la page de confirmation).
+
 ## [1.10.0] - 2026-10-20
 
 ### Ajouté
