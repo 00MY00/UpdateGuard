@@ -21,6 +21,11 @@ if ! grep -q "^## \[${version}\]" "$ROOT/CHANGELOG.md"; then
     printf 'CHANGELOG.md : entrée [%s] manquante.\n' "$version" >&2
     exit 1
 fi
+# dates of the versions: day/month/year ("## [1.11.1] - 21/11/2026"), never year-month-day
+if grep -E '^## \[' "$ROOT/CHANGELOG.md" | grep -qvE '^## \[[0-9]+\.[0-9]+\.[0-9]+\] - [0-3][0-9]/[01][0-9]/[0-9]{4}$'; then
+    printf 'CHANGELOG.md : chaque version doit être datée jour/mois/année, par exemple « ## [%s] - %s ».\n' "$version" "$(date +%d/%m/%Y)" >&2
+    exit 1
+fi
 
 cp -R "$ROOT/UpdateGuard" "$STAGE/UpdateGuard"
 rm -rf "$STAGE/UpdateGuard/Tests"

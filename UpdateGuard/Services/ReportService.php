@@ -76,8 +76,8 @@ class ReportService
             'Module'       => $r['module'],
             'Update'       => $r['from'].($r['to'] !== '' ? ' → '.$r['to'] : ''),
             'Triggered by' => $r['triggered_by'].($r['automatic'] ? ' (automatic)' : ' (manual)'),
-            'Started'      => $r['started_at'],
-            'Finished'     => $r['finished_at'],
+            'Started'      => self::humanDate($r['started_at']),
+            'Finished'     => self::humanDate($r['finished_at']),
         ];
         if ($r['safety_level'] !== '') {
             $pairs['Safety level'] = strtoupper($r['safety_level']);
@@ -134,6 +134,14 @@ class ReportService
         }
 
         return implode("\n", $lines)."\n";
+    }
+
+    /** ISO date of the JSON report -> day/month/year in the TXT / HTML export ('' stays ''). */
+    public static function humanDate($iso)
+    {
+        $time = (string) $iso !== '' ? strtotime((string) $iso) : false;
+
+        return $time ? date('d/m/Y H:i:s', $time) : (string) $iso;
     }
 
     /** "Compatibility checks" block (reports, updateguard:update output). */

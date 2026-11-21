@@ -452,7 +452,7 @@ expect "UpdateGuard page lists the modules that declare it" grep -qE '^/modules/
 
 log "Navigation (Back / Home buttons) and dates in the format of the language"
 dates="$(php_app 'foreach (["fr", "de", "en"] as $l) { app()->setLocale($l); echo $l, "=", Modules\UpdateGuard\Services\Ui::date("2026-11-19 14:05:33"), ";"; } echo Modules\UpdateGuard\Services\Ui::date(null), "|";')"
-expect "dates: French 19/11/2026 14:05, German 19.11.2026 14:05, English ISO ($dates)" test "$dates" = "fr=19/11/2026 14:05;de=19.11.2026 14:05;en=2026-11-19 14:05;|"
+expect "dates day/month/year: French 19/11/2026 14:05, German 19.11.2026 14:05, English 19/11/2026 14:05 ($dates)" test "$dates" = "fr=19/11/2026 14:05;de=19.11.2026 14:05;en=19/11/2026 14:05;|"
 : > /tmp/ug-nav.txt
 for page in "" /modules/UgTestModule /logs; do
     php_app '

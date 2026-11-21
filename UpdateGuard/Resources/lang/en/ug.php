@@ -137,7 +137,7 @@ return [
     'self_update'       => 'UpdateGuard updates are handled by FreeScout.',
     'nav_back' => 'Back',
     'nav_home' => 'Home',
-    'date_format' => 'Y-m-d H:i',
+    'date_format' => 'd/m/Y H:i',
     'self_verified' => 'Verified',
     'self_intact' => 'Intact',
     'self_modified' => 'Files modified',

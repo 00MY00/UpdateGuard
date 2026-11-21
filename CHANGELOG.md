@@ -1,9 +1,20 @@
 # Journal des modifications
 
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions [SemVer](https://semver.org/lang/fr/).
-La version du module est celle de `UpdateGuard/module.json`.
+La version du module est celle de `UpdateGuard/module.json`. Dates au format jour/mois/année.
 
-## [1.11.0] - 2026-11-19
+## [1.11.1] - 21/11/2026
+
+### Corrigé
+- **Dates au format jour/mois/année** partout où on les lit : versions du journal des modifications
+  (`## [1.11.1] - 21/11/2026`), pages du module dans toutes les langues (l'anglais aussi), exports TXT et HTML des
+  rapports. Le rapport JSON garde le format ISO, lisible par les scripts. La publication est refusée si une date du
+  journal n'est pas au format jour/mois/année.
+
+### Compatibilité
+- Vérifié avec FreeScout 1.8.252 (tests d'intégration complets).
+
+## [1.11.0] - 19/11/2026
 
 ### Ajouté
 - Bouton **⌂ Accueil** en haut de chaque page (sauf le tableau de bord) : retour au tableau de bord en un clic.
@@ -19,7 +30,7 @@ La version du module est celle de `UpdateGuard/module.json`.
   confirmation).
 - Texte de confirmation de l'ancienne fenêtre « Mettre à jour ? » retiré (remplacé par la page de confirmation).
 
-## [1.10.0] - 2026-10-20
+## [1.10.0] - 20/10/2026
 
 ### Ajouté
 - **Compatibilité des projets** : un module déclare ses relations avec d'autres modules FreeScout dans un
@@ -45,7 +56,7 @@ La version du module est celle de `UpdateGuard/module.json`.
 - Les anciennes vérifications `requiredAppVersion`, `requiredPhpVersion` et `requires` font partie de la
   compatibilité des projets (même effet, résultat détaillé dans le rapport).
 
-## [1.9.0] - 2026-10-19
+## [1.9.0] - 19/10/2026
 
 ### Ajouté
 - **UpdateGuard se vérifie lui-même**, sans se mettre à jour :
@@ -66,7 +77,7 @@ La version du module est celle de `UpdateGuard/module.json`.
 - « Analyser tous les modules » n'applique plus l'analyse statique à UpdateGuard (son code contient les motifs de
   détection et se signalait lui-même) : c'est sa vérification d'intégrité qui est faite.
 
-## [1.8.3] - 2026-10-19
+## [1.8.3] - 19/10/2026
 
 ### Corrigé
 - **« latestVersionUrl does not answer a version number »** (module Refresh par exemple) : un `latestVersionUrl` qui
@@ -74,7 +85,7 @@ La version du module est celle de `UpdateGuard/module.json`.
   Modules de FreeScout : la version est lue dans son champ `"version"`. Le texte brut (`1.2.0`) reste accepté. Le
   message d'erreur indique les deux formats attendus.
 
-## [1.8.2] - 2026-10-19
+## [1.8.2] - 19/10/2026
 
 ### Corrigé
 - **Barre de progression affichée deux fois** (par exemple « Préparation (staging) ») : une seule barre par opération
@@ -90,7 +101,7 @@ La version du module est celle de `UpdateGuard/module.json`.
 - Nouvel état « Analyse de sécurité » pendant la Security Gate (la barre restait sur l'étape précédente).
 - Le filtre « État » de la page Journaux propose « Décision requise ».
 
-## [1.8.1] - 2026-10-19
+## [1.8.1] - 19/10/2026
 
 ### Corrigé
 - **Nouvelles versions des modules vues trop tard** : les versions n'étaient vérifiées qu'une fois par jour (03:20 par
@@ -102,7 +113,7 @@ La version du module est celle de `UpdateGuard/module.json`.
 - Test d'intégration ajouté : détection d'une nouvelle version publiée sur GitHub (commande, « Tout vérifier » et
   vérification automatique à l'ouverture du tableau de bord) dans un vrai FreeScout.
 
-## [1.8.0] - 2026-10-16
+## [1.8.0] - 16/10/2026
 
 ### Ajouté
 - **Faire confiance aux constats d'un module** : depuis un rapport de sécurité, un administrateur qui a vérifié les
@@ -116,7 +127,7 @@ La version du module est celle de `UpdateGuard/module.json`.
   exécutables, système de fichiers, réseau, scripts d'installation, scanners externes) et ce qui a été signalé
   (fichier et ligne), sans relancer d'analyse ; liste des constats acceptés.
 
-## [1.7.0] - 2026-10-15
+## [1.7.0] - 15/10/2026
 
 ### Modifié
 - **Réglages › Règles de blocage** : toutes les règles qui peuvent arrêter une mise à jour sont réunies dans une
@@ -129,7 +140,7 @@ La version du module est celle de `UpdateGuard/module.json`.
 - Le réglage « En cas d'échec de VirusTotal » faisait double emploi avec « Un scanner externe est indisponible » :
   il n'en reste qu'un, dans les règles de blocage.
 
-## [1.6.0] - 2026-10-15
+## [1.6.0] - 15/10/2026
 
 ### Modifié
 - **Mise à jour automatique d'un paquet inconnu de VirusTotal : plus installée tant qu'il n'a pas été vérifié**
@@ -141,7 +152,7 @@ La version du module est celle de `UpdateGuard/module.json`.
   directement (une seule requête, aucun envoi) ; paquet **inconnu** → mise à jour manuelle en pause avec « Envoyer et
   analyser » / « Continuer sans envoyer » / « Annuler ».
 
-## [1.5.1] - 2026-10-15
+## [1.5.1] - 15/10/2026
 
 ### Corrigé
 - **Téléphone : le menu « ⋮ » s'ouvrait hors de l'écran.** Sur une carte sans bouton « Mettre à jour », le bouton ⋮
@@ -155,7 +166,7 @@ La version du module est celle de `UpdateGuard/module.json`.
   « Tout envoyer et analyser » (les paquets déjà connus viennent du cache, sans requête). Même bouton sur la fiche du
   module. Toujours après l'avertissement de confidentialité, jamais automatiquement.
 
-## [1.5.0] - 2026-10-15
+## [1.5.0] - 15/10/2026
 
 ### Ajouté
 - **Boutons d'analyse de sécurité** sans rien installer : « Analyser tous les modules » sur le tableau de bord et
@@ -173,7 +184,7 @@ La version du module est celle de `UpdateGuard/module.json`.
   réponse « inconnu » gardée 1 jour, aucune recherche pour un paquet déjà bloqué par l'analyse locale, moins
   d'interrogations après un envoi.
 
-## [1.4.0] - 2026-10-15
+## [1.4.0] - 15/10/2026
 
 ### Ajouté
 - **Security Gate** : vérification de sécurité de chaque paquet de module **avant** son installation, dans le
@@ -204,7 +215,7 @@ La version du module est celle de `UpdateGuard/module.json`.
 - **Tests d'intégration dans un vrai FreeScout** (Docker, en CI) : retour arrière après un contrôle de santé raté,
   paquet malveillant bloqué, Zip Slip refusé, mise à jour saine, sortie JSON, rapports de sécurité, pages.
 
-## [1.3.0] - 2026-10-14
+## [1.3.0] - 14/10/2026
 
 ### Ajouté
 - **Alerte « même version republiée avec un contenu différent »** : UpdateGuard retient le SHA-256 de chaque version
@@ -223,7 +234,7 @@ La version du module est celle de `UpdateGuard/module.json`.
   rechargement manuel. Elle se recharge maintenant d'elle-même à la fin de l'opération, et au début de la période
   d'observation (la nouvelle version est déjà installée).
 
-## [1.2.0] - 2026-10-14
+## [1.2.0] - 14/10/2026
 
 ### Corrigé
 - **Accès depuis un téléphone avec Refresh** : Refresh remplace la barre de gauche par une barre d'onglets fixe, sans
@@ -231,20 +242,20 @@ La version du module est celle de `UpdateGuard/module.json`.
   le panneau « Profil » de Refresh (son menu ☰), comme pour Workflow Packs. Réservée aux administrateurs. Sans
   Refresh, l'entrée reste dans le menu « Gérer » de FreeScout.
 
-## [1.1.1] - 2026-10-13
+## [1.1.1] - 13/10/2026
 
 ### Corrigé
 - Détection de l'extension PHP `zip` dans l'installeur via `extension_loaded('zip')`, pour éviter les faux échecs
   du pipeline `php -m | grep` avec `pipefail`.
 
-## [1.1.0] - 2026-10-13
+## [1.1.0] - 13/10/2026
 
 ### Ajouté
 - **7 langues**, comme Workflow Packs et RefreshGlobal : français, anglais, allemand, espagnol, italien, néerlandais,
   portugais (Brésil). La langue suit le profil FreeScout de l'utilisateur ; une langue absente utilise l'anglais.
 - Test unitaire : les 7 fichiers ont les mêmes clés et les mêmes paramètres (`:module`, `:version`…), aucun texte vide.
 
-## [1.0.0] - 2026-10-13
+## [1.0.0] - 13/10/2026
 
 ### Ajouté
 - Première version : mises à jour sécurisées des modules communautaires FreeScout.

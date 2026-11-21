@@ -187,3 +187,19 @@ test('versions: latestVersionUrl answering plain text or a module.json (as FreeS
     same('', $v::fromResponse('{"version": "latest"}'));
     same('', $v::fromResponse(''));
 });
+
+test('reports: dates of the TXT export in day/month/year (JSON keeps ISO)', function () {
+    same('19/11/2026 14:05:33', \Modules\UpdateGuard\Services\ReportService::humanDate('2026-11-19 14:05:33'));
+    same('', \Modules\UpdateGuard\Services\ReportService::humanDate(''));
+    $r = \Modules\UpdateGuard\Services\ReportService::make('UG-20261121-00001', 'update', 'X', '1.0.0', '1.1.0', 'test', false);
+    check(preg_match('/^Started:\s+\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}:\d{2}$/m', \Modules\UpdateGuard\Services\ReportService::toText($r)) === 1, 'Started in day/month/year');
+    check(preg_match('/^\d{4}-\d{2}-\d{2}T/', $r['started_at']) === 1, 'JSON: ISO');
+});
+
+test('CHANGELOG: every version dated day/month/year', function () {
+    preg_match_all('/^## \[[^\]]+\].*$/m', file_get_contents(__DIR__.'/../../CHANGELOG.md'), $m);
+    check(count($m[0]) > 10, 'versions found');
+    foreach ($m[0] as $line) {
+        check(preg_match('/^## \[\d+\.\d+\.\d+\] - [0-3]\d\/[01]\d\/\d{4}$/', $line) === 1, 'day/month/year: '.$line);
+    }
+});
