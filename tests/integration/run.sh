@@ -469,6 +469,8 @@ expect "a tab (Logs): Home only" grep -qx '/logs back=0 home=1' /tmp/ug-nav.txt
 log "Rollback started from an environment with another session driver (scheduler / CLI: SESSION_DRIVER=database, no sessions table)"
 # freescout:module-install (install and rollback) runs config:cache in the child process: the configuration cached
 # for the website must keep the session driver the website is using, never the one of the CLI environment
+# (automatic rollback switched on again: the settings test above saved a partial form)
+php_app 'foreach (["auto_rollback", "rollback_native", "rollback_generic", "rollback_bootstrap"] as $k) { \App\Option::set("updateguard.".$k, 1); }'
 artisan freescout:clear-cache >/dev/null 2>&1 || true
 driver_of() { in_app php -r '$c = require "bootstrap/cache/config.php"; echo $c["session"]["driver"];'; }
 before="$(driver_of)"

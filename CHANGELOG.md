@@ -3,6 +3,18 @@
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions [SemVer](https://semver.org/lang/fr/).
 La version du module est celle de `UpdateGuard/module.json`. Dates au format jour/mois/année.
 
+## [1.11.2] - 22/11/2026
+
+### Corrigé
+- **Site en erreur 500 après une mise à jour ou un retour arrière lancé par le planificateur** : `freescout:module-install`
+  reconstruit le cache de configuration dans le processus lancé par UpdateGuard. Quand l'environnement de ce processus
+  (cron, Docker) avait `SESSION_DRIVER=database` alors que le site utilisait `file` et qu'il n'y a pas de table
+  `sessions`, le cache passait FreeScout en `database` : toutes les pages répondaient 500, alors que le contrôle de
+  santé du module réussissait. Les commandes `artisan` lancées par UpdateGuard gardent maintenant le pilote de session
+  et le nom du cookie déjà en service ; un pilote `database` sans table `sessions` reste `file`. Merci à Andreas
+  Schäfer (PR #1).
+- Test d'intégration qui reproduit le cas (retour arrière lancé avec `SESSION_DRIVER=database`, sans table `sessions`).
+
 ## [1.11.1] - 21/11/2026
 
 ### Corrigé
