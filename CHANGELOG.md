@@ -3,7 +3,7 @@
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions [SemVer](https://semver.org/lang/fr/).
 La version du module est celle de `UpdateGuard/module.json`. Dates au format jour/mois/année.
 
-## [1.11.2] - 22/11/2026
+## [1.11.2] - 23/11/2026
 
 ### Corrigé
 - **Site en erreur 500 après une mise à jour ou un retour arrière lancé par le planificateur** : `freescout:module-install`
