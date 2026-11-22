@@ -466,6 +466,25 @@ expect "dashboard: no Back, no Home (it is the home)" grep -qx ' back=0 home=0' 
 expect "module page: Back (to Modules) and Home" grep -qx '/modules/UgTestModule back=1 home=1' /tmp/ug-nav.txt
 expect "a tab (Logs): Home only" grep -qx '/logs back=0 home=1' /tmp/ug-nav.txt
 
+log "Rollback started from an environment with another session driver (scheduler / CLI: SESSION_DRIVER=database, no sessions table)"
+# freescout:module-install (install and rollback) runs config:cache in the child process: the configuration cached
+# for the website must keep the session driver the website is using, never the one of the CLI environment
+artisan freescout:clear-cache >/dev/null 2>&1 || true
+driver_of() { in_app php -r '$c = require "bootstrap/cache/config.php"; echo $c["session"]["driver"];'; }
+before="$(driver_of)"
+sessions="$(php_app 'echo \Schema::hasTable("sessions") ? "yes" : "no";')"
+set +e
+docker exec -u www-data -w /var/www/html -e SESSION_DRIVER=database "$APP" \
+    php artisan updateguard:update UgTestModule --zip=$PKG/healthfail-1.1.0.zip --sums=$PKG/SHA256SUMS --yes --force > /tmp/ug-session.txt 2>&1
+set -e
+tail -n 4 /tmp/ug-session.txt
+last="$(php_app '$j = \DB::table("updateguard_jobs")->where("module", "UgTestModule")->where("type", "update")->orderBy("id", "desc")->first(); echo $j->status;')"
+after="$(driver_of)"
+login="$(php_app '$r = app(Illuminate\Contracts\Http\Kernel::class)->handle(Illuminate\Http\Request::create("http://localhost/login", "GET")); echo $r->getStatusCode();')"
+expect "the failing update was rolled back ($last)" test "$last" = "rolled_back"
+expect "cached session driver kept: $before before, $after after (sessions table: $sessions)" test "$after" = "$before"
+expect "the login page still answers 200 after the rollback ($login)" test "$login" = "200"
+
 log "Versions"
 docker exec -w /var/www/html "$APP" sh -c 'php -r "echo \"PHP \".PHP_VERSION.PHP_EOL;"; php artisan --version'
 
