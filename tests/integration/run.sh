@@ -475,7 +475,7 @@ before="$(driver_of)"
 sessions="$(php_app 'echo \Schema::hasTable("sessions") ? "yes" : "no";')"
 set +e
 docker exec -u www-data -w /var/www/html -e SESSION_DRIVER=database "$APP" \
-    php artisan updateguard:update UgTestModule --zip=$PKG/healthfail-1.1.0.zip --sums=$PKG/SHA256SUMS --yes --force > /tmp/ug-session.txt 2>&1
+    php artisan updateguard:update UgTestModule --zip=$PKG/healthfail-1.1.0.zip --sums=$PKG/SHA256SUMS --yes --force --override-compatibility > /tmp/ug-session.txt 2>&1
 set -e
 tail -n 4 /tmp/ug-session.txt
 last="$(php_app '$j = \DB::table("updateguard_jobs")->where("module", "UgTestModule")->where("type", "update")->orderBy("id", "desc")->first(); echo $j->status;')"
